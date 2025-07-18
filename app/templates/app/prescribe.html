@@ -1,0 +1,334 @@
+{% extends "app/base.html" %}
+{% block content %}
+
+<style>
+  body {
+    background-image: linear-gradient(rgba(201, 237, 231, 0.53), rgba(25, 201, 145, 0.51)),
+                     url('https://i.postimg.cc/Fs5w3r7s/1.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .prescription-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  .form-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #13a088e2;
+    display: flex;
+    align-items: center;
+  }
+  .form-title svg { margin-right: .75rem; color:#059669; }
+  .form-section { margin-bottom: 1.75rem; }
+  .section-label { display:block; font-size:.95rem; font-weight:600; color:#374151; margin-bottom:.5rem; }
+  .form-input {
+    width:100%; padding:.75rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem;
+    transition:all .2s; background-color:#f9fafb;
+  }
+  .form-input:focus{ outline:none; border-color:#059669; box-shadow:0 0 0 3px rgba(5,150,105,.1); background:#fff; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1.25rem; border-radius:.5rem; font-weight:500; font-size:.95rem; cursor:pointer; border:none; transition:all .2s; }
+  .btn-primary{ background:#059669; color:#fff; }
+  .btn-primary:hover{ background:#047857; }
+  .btn-secondary{ background:#e5e7eb; color:#374151; margin-right:.75rem; }
+  .btn-secondary:hover{ background:#d1d5db; }
+  .btn-icon{ margin-right:.5rem; width:1.1rem; height:1.1rem; }
+  .suggestions-box{ position:absolute; width:100%; max-height:200px; overflow-y:auto; background:#fff; border:1px solid #e5ebe9; border-radius:.5rem; box-shadow:0 4px 6px rgba(0,0,0,.1); z-index:50; }
+  .suggestion-item{ padding:.5rem 1rem; cursor:pointer; font-size:.9rem; }
+  .suggestion-item:hover{ background:#f3f4f6; }
+  .medicine-row{ margin-bottom:1.5rem; padding:1.25rem; background:#fff; border:1px solid #e5e7eb; border-radius:.5rem; position:relative; }
+  .grid-cols-4{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.75rem; }
+  @media(max-width:768px){ .prescription-container{ padding:1.5rem; margin:1rem; } .grid-cols-4{ grid-template-columns:1fr; } .btn{ width:100%; margin-bottom:.75rem;} }
+</style>
+
+<div class="prescription-container">
+  <h2 class="form-title">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Create Prescription
+  </h2>
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <!-- Problems Section -->
+    <div class="form-section">
+      <label class="section-label">Problems</label>
+      <div id="problems" class="relative">
+        <input type="text" name="problems" class="form-input" placeholder="Enter patient problems" />
+      </div>
+      <button type="button" onclick="addField('problems','problems')" class="btn btn-secondary mt-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        Add Problem
+      </button>
+    </div>
+
+    <!-- Examinations Section -->
+    <div class="form-section">
+      <label class="section-label">Examinations</label>
+      <div id="examinations">
+        <input type="text" name="examinations" class="form-input" placeholder="Enter examination details" />
+      </div>
+      <button type="button" onclick="addField('examinations','examinations')" class="btn btn-secondary mt-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        Add Examination
+      </button>
+    </div>
+
+    <!-- Reports Section -->
+    <div class="form-section">
+      <label class="section-label">Reports</label>
+      <div id="reports" class="space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input type="text" name="report_names" class="form-input" placeholder="Report Name" />
+          <input type="text" name="report_results" class="form-input" placeholder="Report Result" />
+        </div>
+      </div>
+      <button type="button" onclick="addReportField()" class="btn btn-secondary mt-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        Add Report
+      </button>
+    </div>
+
+    <!-- Report Images -->
+    <div class="form-section">
+      <label class="section-label">Report Images</label>
+      <input type="file" name="report_images" multiple class="form-input" />
+    </div>
+
+    <!-- Medicines Section -->
+    <div class="form-section">
+      <label class="section-label">Medicines</label>
+      <div id="medicines">
+        <div class="medicine-row">
+          <div class="relative">
+            <input type="text" name="medicine_names" id="medName0" class="form-input autocomplete" placeholder="Medicine Name" autocomplete="off" />
+            <div id="suggestions0" class="suggestions-box hidden"></div>
+          </div>
+          <div class="grid-cols-4 mt-3">
+            <div><input list="strength-list" name="medicine_strengths" class="form-input" placeholder="Strength"/></div>
+            <div><input list="freq-list"     name="medicine_frequencies" class="form-input" placeholder="Frequency"/></div>
+            <div><input list="remark-list"   name="medicine_remarks" class="form-input" placeholder="Remark"/></div>
+            <div><input type="number" name="medicine_days" class="form-input" placeholder="Days"/></div>
+          </div>
+        </div>
+      </div>
+      <button type="button" onclick="addMedicineField()" class="btn btn-secondary mt-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        Add Medicine
+      </button>
+    </div>
+
+    <!-- datalists ... (unchanged) -->
+    <datalist id="strength-list"><option value="250mg"><option value="500mg"><option value="5ml"><option value="10ml"><option value="1g"><option value="2.5mg"><option value="10mg"><option value="20mg"></datalist>
+    <datalist id="freq-list"><option value="1+1+1"><option value="1+1+0"><option value="1+0+1"><option value="1+0+0"><option value="0+1+1"><option value="0+0+1"><option value="2+2+2"><option value="1+0+0+1"></datalist>
+    <datalist id="remark-list"><option value="Before Food"><option value="After Food"><option value="Empty Stomach"><option value="With Milk"><option value="When Required"><option value="At Bedtime"><option value="Morning Only"><option value="Night Only"></datalist>
+
+    <div class="flex flex-wrap justify-end gap-3 pt-6">
+      <button type="submit" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Save & Generate PDF
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+/* ------------------------------------------------------------
+   Helpers for adding extra fields
+------------------------------------------------------------ */
+function addField(containerId, name) {
+  const div   = document.getElementById(containerId);
+  const input = document.createElement('input');
+  input.type  = 'text';
+  input.name  = name;
+  input.className = 'form-input mt-3';
+  div.appendChild(input);
+
+  if (name === 'problems') attachProblemSuggest(input);
+}
+
+function addReportField() {
+  const div = document.getElementById('reports');
+  div.insertAdjacentHTML(
+    'beforeend',
+    `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+       <input type="text" name="report_names"  class="form-input" placeholder="Report Name">
+       <input type="text" name="report_results" class="form-input" placeholder="Report Result">
+     </div>`
+  );
+}
+
+/* ------------------------------------------------------------
+   Extract strength from name and suggest (don't auto-fill)
+------------------------------------------------------------ */
+function autofillStrength(nameInput) {
+  const val = nameInput.value.trim();
+  if (!val) return;
+
+  let cleanName = val;
+  const datalist = document.getElementById('strength-list');
+
+  // Match all strength values like 100mg, 600, 2.5ml, etc.
+  const matches = [...val.matchAll(/\d+(?:\.\d+)?\s*(mg|ml|g)?/gi)];
+
+  if (matches.length > 0) {
+    matches.forEach(m => {
+      const str = m[0].replace(/\s+/g, '');
+      if (str) {
+        const exists = [...datalist.options].some(opt => opt.value === str);
+        if (!exists) {
+          const option = document.createElement('option');
+          option.value = str;
+          datalist.appendChild(option);
+        }
+      }
+    });
+
+    // Remove all matched strengths from name (just once each)
+    let cleaned = val;
+    matches.forEach(m => {
+      const pattern = new RegExp(m[0], 'i');
+      cleaned = cleaned.replace(pattern, '').trim();
+    });
+
+    cleanName = cleaned;
+  }
+
+  nameInput.value = cleanName;
+}
+
+/* ------------------------------------------------------------
+   Medicine rows (initial + dynamic)
+------------------------------------------------------------ */
+let medIdx = 0;
+
+function addMedicineField() {
+  medIdx++;
+  const div = document.getElementById('medicines');
+  div.insertAdjacentHTML('beforeend', `
+    <div class="medicine-row">
+      <div class="relative">
+        <input  type="text" name="medicine_names" id="medName${medIdx}"
+                class="form-input autocomplete" placeholder="Medicine Name" autocomplete="off">
+        <div id="suggestions${medIdx}" class="suggestions-box hidden"></div>
+      </div>
+      <div class="grid-cols-4 mt-3">
+        <div><input list="strength-list" name="medicine_strengths"  class="form-input" placeholder="Strength"></div>
+        <div><input list="freq-list"     name="medicine_frequencies" class="form-input" placeholder="Frequency"></div>
+        <div><input list="remark-list"   name="medicine_remarks"     class="form-input" placeholder="Remark"></div>
+        <div><input type="number"        name="medicine_days"        class="form-input" placeholder="Days"></div>
+      </div>
+    </div>
+  `);
+  const nameInput = document.getElementById(`medName${medIdx}`);
+  attachMedAutocomplete(nameInput, medIdx);
+  nameInput.addEventListener('blur', () => autofillStrength(nameInput));
+}
+
+function getOrAddEmptyMedInput() {
+  let empty = [...document.querySelectorAll('input[name="medicine_names"]')]
+               .find(i => !i.value.trim());
+  if (!empty) {
+    addMedicineField();
+    empty = document.getElementById('medName' + medIdx);
+  }
+  return empty;
+}
+
+/* ------------------------------------------------------------
+   Autocomplete for medicine names
+------------------------------------------------------------ */
+function attachMedAutocomplete(box, idx) {
+  const sug = document.getElementById('suggestions' + idx);
+
+  box.addEventListener('input', () => {
+    const q = box.value.trim();
+    if (!q) { sug.classList.add('hidden'); return; }
+
+    fetch(`/api/medicines/?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(list => {
+        if (!list.length) { sug.classList.add('hidden'); return; }
+        sug.innerHTML = list.map(
+          m => `<div class="suggestion-item"
+                     onclick="insertMedicine('${m.name.replace(/'/g, "\\'")}')">
+                   ${m.name} <span class="text-xs text-gray-500">(${m.count})</span>
+                 </div>`
+        ).join('');
+        sug.classList.remove('hidden');
+      });
+  });
+
+  document.addEventListener('click', e => {
+    if (!box.contains(e.target) && !sug.contains(e.target)) sug.classList.add('hidden');
+  });
+
+  box.addEventListener('blur', () => autofillStrength(box));
+}
+
+/* ------------------------------------------------------------
+   Insert medicine name from suggestion and trigger strength extraction
+------------------------------------------------------------ */
+function insertMedicine(name) {
+  const field = getOrAddEmptyMedInput();
+  field.value = name;
+  autofillStrength(field);
+  {% comment %} document.querySelectorAll('.suggestions-box').forEach(b => b.classList.add('hidden')); {% endcomment %}
+}
+
+/* ------------------------------------------------------------
+   Autocomplete for problems
+------------------------------------------------------------ */
+function attachProblemSuggest(box) {
+  const sug = document.createElement('div');
+  sug.className = 'suggestions-box hidden';
+  box.parentNode.appendChild(sug);
+
+  box.addEventListener('input', () => {
+    const q = box.value.trim();
+    if (!q) { sug.classList.add('hidden'); return; }
+
+    fetch(`/api/problem-meds/?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(list => {
+        if (!list.length) { sug.classList.add('hidden'); return; }
+        sug.innerHTML = list.map(
+          m => `<div class="suggestion-item"
+                     onclick="insertMedicine('${m.name.replace(/'/g, "\\'")}')">
+                   ${m.name} <span class="text-xs text-gray-500">(${m.count})</span>
+                 </div>`
+        ).join('');
+        sug.classList.remove('hidden');
+      });
+  });
+
+  document.addEventListener('click', e => {
+    if (!box.contains(e.target) && !sug.contains(e.target)) sug.classList.add('hidden');
+  });
+}
+
+/* ------------------------------------------------------------
+   Init on first load
+------------------------------------------------------------ */
+const firstInput = document.getElementById('medName0');
+attachMedAutocomplete(firstInput, 0);
+firstInput.addEventListener('blur', () => autofillStrength(firstInput));
+attachProblemSuggest(document.querySelector('input[name="problems"]'));
+</script>
+
+
+
+{% endblock %}

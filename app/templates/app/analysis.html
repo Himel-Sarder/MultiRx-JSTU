@@ -1,0 +1,349 @@
+{% extends 'app/base.html' %}
+{% block content %}
+
+<style>
+  .dashboard-container {
+    background-color: #2bbd9f;
+    min-height: 100vh;
+  }
+  .chart-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  .chart-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1.25rem 1.5rem;
+  }
+  .chart-body {
+    padding: 1.5rem;
+  }
+  .filter-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+  }
+</style>
+
+<div class="dashboard-container">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-3xl font-bold text-gray-900 mb-3">
+        Patient Data Analytics
+      </h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        Visual insights into patient demographics, treatments, and trends
+      </p>
+    </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col sm:flex-row justify-center items-center gap-6 mb-12 bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl shadow-md border border-gray-200">
+    
+    <!-- Year Filter -->
+    <div class="w-full sm:w-auto">
+      <label for="year-select" class="block text-sm font-semibold text-gray-700 mb-2 tracking-wide uppercase">Year</label>
+      <select id="year-select"
+              class="block w-40 sm:w-48 bg-white border border-gray-300 text-gray-800 py-2 px-4 pr-8 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+        {% for y in available_years %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  <!-- Month Filter -->
+    <div class="w-full sm:w-auto">
+      <label for="month-select" class="block text-sm font-semibold text-gray-700 mb-2 tracking-wide uppercase">Month</label>
+      <select id="month-select"
+              class="block w-40 sm:w-48 bg-white border border-gray-300 text-gray-800 py-2 px-4 pr-8 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+        {% for m in month_options %}
+          <option value="{{ m.value }}" {% if m.selected %}selected{% endif %}>{{ m.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  </div>
+
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Gender Distribution -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-pink-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            Gender Distribution
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="gender-chart"></div>
+        </div>
+      </div>
+
+      <!-- Patient Distribution by Address -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Patient Distribution by Address
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="address-pie"></div>
+        </div>
+      </div>
+
+      <!-- Top Prescribed Medicines -->
+      <div class="chart-card lg:col-span-2">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            Top Prescribed Medicines
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="medicine-chart"></div>
+        </div>
+      </div>
+
+      <!-- Top Problems by Patient Count -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Top Problems by Patient Count
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="problem-age-bar"></div>
+        </div>
+      </div>
+
+      <!-- Most Common Patient Ages -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Most Common Patient Ages
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="age-bar"></div>
+        </div>
+      </div>
+
+      <!-- Monthly Prescription Count -->
+      <div class="chart-card lg:col-span-2">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-cyan-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Monthly Prescription Count
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="monthly-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+  // Filter change handler
+  ['year-select', 'month-select'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      const y = document.getElementById('year-select').value;
+      const m = document.getElementById('month-select').value;
+      const url = new URL(window.location.href);
+      url.searchParams.set('year', y);
+      url.searchParams.set('month', m);
+      window.location = url.toString();
+    });
+  });
+
+  // Gender Pie Chart
+  Plotly.newPlot('gender-chart', [{
+    values: {{ gender_values|safe }},
+    labels: {{ gender_labels|safe }},
+    type: 'pie',
+    textinfo: 'label+percent',
+    insidetextorientation: 'radial',
+    marker: {
+      colors: ['#ec4899', '#3b82f6', '#10b981']
+    },
+    hoverinfo: 'label+percent+value',
+    textfont: {
+      size: 14
+    },
+    hole: 0.3
+  }], {
+    margin: { t: 0, b: 0, l: 0, r: 0 },
+    height: 300,
+    showlegend: true
+  });
+
+  // Address Distribution Pie Chart
+  Plotly.newPlot('address-pie', [{
+    values: {{ address_counts|safe }},
+    labels: {{ address_labels|safe }},
+    type: 'pie',
+    textinfo: 'label+percent',
+    insidetextorientation: 'radial',
+    marker: {
+      colors: ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#6366f1']
+    },
+    hoverinfo: 'label+percent+value',
+    textfont: {
+      size: 14
+    },
+    hole: 0.3
+  }], {
+    margin: { t: 0, b: 0, l: 0, r: 0 },
+    height: 300,
+    showlegend: true
+  });
+
+  // Medicine Bar Chart
+  Plotly.newPlot('medicine-chart', [{
+    x: {{ medicine_labels|safe }},
+    y: {{ medicine_values|safe }},
+    type: 'bar',
+    marker: { 
+      color: 'rgb(59, 130, 246)',
+      line: {
+        color: 'rgb(8, 48, 107)',
+        width: 1.5
+      }
+    },
+    text: {{ medicine_values|safe }},
+    textposition: 'auto'
+  }], {
+    margin: { t: 30, b: 100, l: 50, r: 30 },
+    height: 400,
+    xaxis: { 
+      title: 'Medicine Name',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'Prescription Count',
+      gridcolor: '#e2e8f0'
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  });
+
+  // Problem Count Bar Chart
+  Plotly.newPlot('problem-age-bar', [{
+    x: {{ problem_labels|safe }},
+    y: {{ problem_age_counts|safe }},
+    type: 'bar',
+    marker: { 
+      color: 'rgb(239, 68, 68)',
+      line: {
+        color: 'rgb(153, 27, 27)',
+        width: 1.5
+      }
+    },
+    text: {{ problem_age_counts|safe }},
+    textposition: 'auto'
+  }], {
+    margin: { t: 30, b: 100, l: 50, r: 30 },
+    height: 400,
+    xaxis: { 
+      title: 'Medical Problem',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'Patient Count',
+      gridcolor: '#e2e8f0'
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  });
+
+  // Age Distribution Bar Chart
+  Plotly.newPlot('age-bar', [{
+    x: {{ age_labels|safe }},
+    y: {{ age_counts|safe }},
+    type: 'bar',
+    marker: { 
+      color: 'rgb(139, 92, 246)',
+      line: {
+        color: 'rgb(76, 29, 149)',
+        width: 1.5
+      }
+    },
+    text: {{ age_counts|safe }},
+    textposition: 'auto'
+  }], {
+    margin: { t: 30, b: 50, l: 50, r: 30 },
+    height: 400,
+    xaxis: { 
+      title: 'Patient Age',
+      gridcolor: '#e2e8f0'
+    },
+    yaxis: { 
+      title: 'Count',
+      gridcolor: '#e2e8f0'
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  });
+
+  // Monthly Prescription Line Chart
+  Plotly.newPlot('monthly-line', [{
+    x: {{ monthly_labels|safe }},
+    y: {{ monthly_counts|safe }},
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { 
+      shape: 'spline', 
+      color: 'rgb(6, 182, 212)',
+      width: 3
+    },
+    marker: { 
+      size: 8,
+      color: 'rgb(6, 182, 212)'
+    },
+    text: {{ monthly_counts|safe }},
+    textposition: 'top center'
+  }], {
+    margin: { t: 30, b: 50, l: 50, r: 30 },
+    height: 400,
+    xaxis: {
+      title: '{{ x_axis_title }}',
+      type: '{{ x_axis_type }}',
+      gridcolor: '#e2e8f0'
+    },
+    yaxis: { 
+      title: 'Prescription Count',
+      gridcolor: '#e2e8f0'
+    },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)'
+  });
+</script>
+
+{% endblock %}

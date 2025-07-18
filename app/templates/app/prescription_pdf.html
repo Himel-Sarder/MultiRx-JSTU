@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medical Prescription</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 12px;
+    }
+    
+    body {
+      background: white;
+      padding: 5mm;
+      position: relative;
+    }
+    
+    .prescription-container {
+      width: 210mm;
+      height: 297mm;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Watermark */
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.08;
+      z-index: 1;
+      pointer-events: none;
+      width: 300px;
+      height: 300px;
+      background-image: url('{% static 'app/images/logo-Back.png' %}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    /* Header */
+    .prescription-header {
+      background: linear-gradient(90deg, #1f8f55ff 0%, #097b4bff 100%);
+      color: white;
+      padding: 3mm 5mm;
+      display: flex;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .logo-container {
+      width: 25mm;
+      height: 25mm;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 4mm;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 2px solid white;
+    }
+    
+    .logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .header-content {
+      flex: 1;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .hospital-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 1mm;
+    }
+    
+    .hospital-address {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 2mm;
+    }
+    
+    .doctor-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2mm;
+      padding-top: 2mm;
+      border-top: 1px dashed rgba(255, 255, 255, 0.3);
+    }
+    
+    .doctor-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .doctor-bio {
+      font-size: 14px;
+      font-weight: 300;
+      max-width: 60mm;
+    }
+    
+    /* Patient Information */
+    .patient-info {
+      padding: 3mm 5mm;
+      background: #f8fdff;
+      border-bottom: 1px solid #cdffe9ff;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .info-table td {
+      padding: 2mm 3mm;
+      border: 1px solid #cdffdeff;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: #016d1aff;
+      background-color: #e6fff2ff;
+      width: 25mm;
+    }
+    
+    .info-value {
+      color: #333;
+    }
+    
+    /* Two-column layout */
+    .content-columns {
+      display: flex;
+      padding: 3mm 5mm;
+      height: 140mm;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .left-column {
+      flex: 40%;
+      border-right: 1px dashed #cdffdeff;
+      padding-right: 5mm;
+    }
+    
+    .right-column {
+      flex: 60%;
+      padding-left: 5mm;
+    }
+    
+    .section {
+      margin-bottom: 4mm;
+    }
+    
+    .section-title {
+      color: #026525ff;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2mm;
+      padding-bottom: 1mm;
+      border-bottom: 1px solid #cdffdeff;
+      display: flex;
+      align-items: center;
+      gap: 2mm;
+    }
+    
+    .section-title i {
+      font-size: 12px;
+    }
+    
+    .item-list {
+      list-style-type: none;
+      padding-left: 5mm;
+    }
+    
+    .item-list li {
+      margin-bottom: 2mm;
+      position: relative;
+      padding-left: 5mm;
+    }
+    
+    .item-list li:before {
+      content: "•";
+      color: #00bc51ff;
+      font-size: 14px;
+      position: absolute;
+      left: 0;
+      top: -1mm;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2mm;
+    }
+    
+    th {
+      background: #00bc6aff;
+      color: white;
+      font-weight: 600;
+      text-align: left;
+      padding: 2mm 3mm;
+      font-size: 11px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f5fffaff;
+    }
+    
+    td {
+      padding: 2mm 3mm;
+      border-bottom: 1px solid #e1fee7ff;
+      color: #333;
+      font-size: 11px;
+    }
+    
+    /* Rx Symbol */
+    .rx-container {
+      text-align: left;
+      margin-bottom: 4mm;
+    }
+    
+    .rx-symbol {
+      font-size: 32px;
+      font-weight: 700;
+      color: #00bc55ff;
+      opacity: 0.2;
+      line-height: 1;
+      margin-bottom: 1mm;
+    }
+    
+    .rx-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #00bc22ff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .rx-text:after {
+      content: '';
+      position: absolute;
+      bottom: -2mm;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #00bc26ff, transparent);
+    }
+    
+    /* Signature Area */
+    .signature-area {
+      position: absolute;
+      bottom: 20mm;
+      right: 5mm;
+      text-align: right;
+      width: 60mm;
+      z-index: 2;
+    }
+    
+    .signature-line {
+      display: inline-block;
+      width: 50mm;
+      border-bottom: 1px solid #00bc61ff;
+      margin: 3mm 0 1mm;
+    }
+    
+    .doctor-signature {
+      color: #00bc55ff;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    /* Footer Note */
+    .footer-note {
+      position: absolute;
+      bottom: 5mm;
+      left: 5mm;
+      right: 5mm;
+      background: #e6ffedff;
+      padding: 2mm;
+      text-align: center;
+      font-size: 10px;
+      color: #00a64bff;
+      border-top: 1px solid #cdffdeff;
+      z-index: 2;
+    }
+    
+    .footer-note i {
+      margin-right: 1mm;
+      color: #e74c3c;
+      font-size: 10px;
+    }
+    
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      body, html {
+        margin: 0;
+        padding: 0;
+        width: 210mm;
+        height: 297mm;
+      }
+      .prescription-container {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="prescription-container">
+    <!-- Watermark -->
+    <div class="watermark"></div>
+    
+    <!-- Header -->
+    <div class="prescription-header">
+      <div class="logo-container">
+        <img src="{% static 'app/images/logo.png' %}" alt="Hospital Logo" class="logo" />
+      </div>
+      
+      <div class="header-content">
+        <div class="hospital-name">Ever Green Life General Hospital Ltd.</div>
+        <div class="hospital-address">Shakervita, Jamalpur</div>
+        
+        <div class="doctor-info">
+          <div>
+            <div class="doctor-name">Dr. {{ doctor.get_full_name }}</div>
+            <div class="doctor-bio">{{ doctor.specialization }}</div>
+            <div class="doctor-bio">{{ doctor.bio }}</div>
+          </div>
+          <div>
+            <div class="doctor-bio">License: MED-12345</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Patient Information -->
+    <div class="patient-info">
+      <table class="info-table">
+        <tr>
+          <td class="info-label">Patient Name</td>
+          <td class="info-value">{{ patient.name }}</td>
+          <td class="info-label">Age</td>
+          <td class="info-value">{{ patient.age }} years</td>
+          <td class="info-label">Gender</td>
+          <td class="info-value">{{ patient.gender}}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Address</td>
+          <td class="info-value" colspan="5">{{ patient.address }}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Date</td>
+          <td class="info-value">{{ date }}</td>
+          <td class="info-label">Prescription No</td>
+          <td class="info-value">RX-{{ year }}-{{ prescription_id }}</td>
+          <td class="info-label">Time</td>
+          <td class="info-value">{{ time }}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Two-column Content -->
+    <div class="content-columns">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Problems -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-diagnoses"></i> Problems
+          </div>
+          <ul class="item-list">
+            {% for p in patient.problems.all %}
+              <li>{{ p.description }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        
+        <!-- Examinations -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-stethoscope"></i> Examinations
+          </div>
+          <ul class="item-list">
+            {% for e in patient.examinations.all %}
+              <li>{{ e.description }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        
+        <!-- Reports -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-file-medical"></i> Reports
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in patient.reports.all %}
+              <tr>
+                <td>{{ r.name }}</td>
+                <td>{{ r.result }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Rx Symbol -->
+        <div class="rx-container">
+          <div class="rx-symbol">℞</div>
+          <div class="rx-text">Prescription</div>
+        </div>
+        
+        <!-- Medicines -->
+        <table>
+          <thead>
+            <tr>
+              <th>Drug Name</th>
+              <th>Strength</th>
+              <th>Frequency</th>
+              <th>Remark</th>
+              <th>Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in patient.medicines.all %}
+            <tr>
+              <td>{{ m.name }}</td>
+              <td>{{ m.strength }}</td>
+              <td>{{ m.frequency }}</td>
+              <td>{{ m.remark }}</td>
+              <td>{{ m.days }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Doctor Signature -->
+    <div class="signature-area">
+      <div class="signature-line"></div>
+      <div class="doctor-signature">Dr. {{ doctor.get_full_name }}</div>
+      <div>{{ doctor.specialization }}</div>
+    </div>
+    
+    <!-- Footer Note -->
+    <div class="footer-note">
+      <i class="fas fa-exclamation-circle"></i> This prescription is valid for 30 days from issue date. Do not share medications. Follow dosage instructions carefully.
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,263 @@
+{% extends 'app/base.html' %}
+{% block content %}
+
+<style>
+  .bg-cover {
+    background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 2rem 0;
+  }
+  .profile-container {
+    background: rgba(13, 147, 111, 0.56);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .profile-picture-container {
+    width: 320px;
+    height: 320px;
+    border: 8px solid white;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  }
+  .specialization-badge {
+    background-color: #10b981;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    margin-top: 1.5rem;
+    display: inline-block;
+  }
+  .input-field {
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+  }
+  .input-field:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  }
+  .submit-btn {
+    background: linear-gradient(to right, #10b981, #059669);
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  }
+  .bio-field {
+    min-height: 140px;
+  }
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 3rem;
+  }
+  .profile-info {
+    padding-top: 1.5rem;
+  }
+  .camera-icon {
+    width: 44px;
+    height: 44px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+  }
+  .camera-icon:hover {
+    transform: scale(1.1);
+    background: #f0fdf4;
+  }
+  @media (max-width: 1024px) {
+    .profile-grid {
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+    .profile-picture-container {
+      width: 280px;
+      height: 280px;
+    }
+  }
+  @media (max-width: 768px) {
+    .profile-grid {
+      grid-template-columns: 1fr;
+    }
+    .profile-picture-container {
+      width: 240px;
+      height: 240px;
+      margin: 0 auto;
+    }
+    .profile-info {
+      padding-top: 0;
+    }
+  }
+</style>
+
+<div class="bg-cover">
+  <div class="max-w-6xl mx-auto profile-container my-8 overflow-hidden">
+    <!-- Header Section -->
+    <div class="px-8 py-6 bg-gradient-to-r from-green-50 to-emerald-50 profile-header">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">Professional Profile</h2>
+          <p class="text-gray-600">Update your medical practice information</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Profile Content -->
+    <div class="p-8">
+      <div class="profile-grid">
+        <!-- Left Column - Extra Large Profile Picture -->
+        <div class="flex flex-col items-center">
+          <div class="relative mb-6">
+            {% if doctor.profile_picture %}
+              <img src="{{ doctor.profile_picture.url }}" alt="Profile Picture" 
+                   class="profile-picture-container rounded-full object-cover">
+            {% else %}
+              <div class="profile-picture-container rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-28 w-28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            {% endif %}
+            <label for="id_profile_picture" class="absolute bottom-6 right-6 cursor-pointer">
+              <div class="camera-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <input type="file" name="profile_picture" accept="image/*" id="id_profile_picture" class="hidden">
+            </label>
+          </div>
+          
+          <div class="text-center">
+            <h3 class="text-2xl font-bold text-white">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h3>
+            <div class="specialization-badge">
+              Asthma, Chest Diseases & Medicine Specialist
+            </div>
+            <p class="text-white text-base mt-4">{{ doctor.email }}</p>
+            <p class="text-sm text-white mt-2">Member since {{ doctor.date_joined|date:"F Y" }}</p>
+          </div>
+        </div>
+
+        <!-- Right Column - Form Content -->
+        <div class="profile-info">
+          <!-- Profile Update Form -->
+          <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Bio Section -->
+            <div>
+              <label for="{{ form.bio.id_for_label }}" class="block text-lg font-medium text-white mb-2">
+                Professional Biography
+                <span class="text-sm text-white ml-2">(Visible to patients)</span>
+              </label>
+              {{ form.bio }}
+              {% if form.bio.errors %}
+                <p class="mt-2 text-sm text-red-600 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  {{ form.bio.errors|striptags }}
+                </p>
+              {% endif %}
+            </div>
+
+            <!-- Other Fields -->
+            {% for field in form %}
+              {% if field.name != 'bio' and field.name != 'profile_picture' %}
+                <div>
+                  <label for="{{ field.id_for_label }}" class="block text-lg font-medium text-white mb-2">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+                  </label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                  {% endif %}
+                  {% if field.errors %}
+                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      </svg>
+                      {{ field.errors|striptags }}
+                    </p>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+
+            <div class="pt-6 flex justify-end">
+              <button type="submit" class="submit-btn text-white font-medium py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-lg">
+                Update Profile
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-1 -mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize all form inputs with proper styling
+  document.querySelectorAll("input, textarea, select").forEach(input => {
+    input.classList.add(
+      "w-full",
+      "px-4",
+      "py-3",
+      "border",
+      "border-gray-300",
+      "rounded-lg",
+      "focus:outline-none",
+      "input-field",
+      "text-gray-700",
+      "text-base"
+    );
+    
+    if (input.id === "id_bio") {
+      input.classList.add("bio-field");
+    }
+    
+    // Add error class if field has errors
+    if (input.classList.contains("is-invalid")) {
+      input.classList.add("border-red-500");
+    }
+  });
+
+  // Preview profile picture when selected
+  document.getElementById('id_profile_picture').addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const profilePic = document.querySelector('.profile-picture-container');
+        if (profilePic.tagName === 'IMG') {
+          profilePic.src = event.target.result;
+        } else {
+          // Replace the placeholder div with an image
+          const newImg = document.createElement('img');
+          newImg.src = event.target.result;
+          newImg.className = profilePic.className + ' object-cover';
+          newImg.alt = 'Profile Picture';
+          profilePic.parentNode.replaceChild(newImg, profilePic);
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  });
+</script>
+
+{% endblock %}

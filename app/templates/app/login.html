@@ -1,0 +1,244 @@
+{% extends 'app/base.html' %}
+{% block content %}
+
+<style>
+  .bg-cover-img {
+    background-image: url('https://i.postimg.cc/02cSd591/8.jpg');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    z-index: 0;
+  }
+  .bg-cover-img::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;  /* <-- Important */
+  }
+
+  .form-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+  }
+  .left-content {
+    background: linear-gradient(135deg, #2bbd9f 0%, #1e9b82 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .left-content::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: rotate(30deg);
+  }
+  .submit-btn {
+    background: #2bbd9f;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn:hover {
+    background: #1e9b82;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(43, 189, 159, 0.4);
+  }
+  .submit-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+  }
+  .submit-btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+  }
+  @keyframes ripple {
+    0% {
+      transform: scale(0, 0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(20, 20);
+      opacity: 0;
+    }
+  }
+  .input-field {
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  .input-field:focus {
+    border-color: #2bbd9f;
+    box-shadow: 0 0 0 3px rgba(43, 189, 159, 0.2);
+  }
+  .form-link {
+    color: #2bbd9f;
+    transition: all 0.2s ease;
+  }
+  .form-link:hover {
+    color: #1e9b82;
+    text-decoration: underline;
+  }
+  .decoration-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .circle-1 {
+    width: 150px;
+    height: 150px;
+    top: -50px;
+    left: -50px;
+  }
+  .circle-2 {
+    width: 80px;
+    height: 80px;
+    bottom: -20px;
+    right: -20px;
+  }
+</style>
+
+<div class="min-h-screen flex items-center justify-center bg-cover-img px-4 py-12">
+  <div class="grid grid-cols-1 md:grid-cols-2 w-full max-w-5xl mx-auto form-container">
+    
+    <!-- Left Content -->
+    <div class="p-10 flex flex-col justify-center text-center md:text-left left-content relative">
+      <div class="decoration-circle circle-1"></div>
+      <div class="decoration-circle circle-2"></div>
+      
+      <div class="relative z-10">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto md:mx-0 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-3">Welcome Back</h1>
+        <p class="text-xl text-white text-opacity-90 font-medium mb-6">Medical Services That You Can Trust</p>
+        <p class="text-white text-opacity-80">
+          Access your personalized healthcare dashboard and manage your medical records securely with our trusted platform.
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Form -->
+    <div class="p-10 flex items-center justify-center">
+      <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-gray-800 mb-2">Login</h2>
+          <p class="text-gray-500">Enter your credentials to access your account</p>
+        </div>
+        
+        <form method="post" class="space-y-6">
+          {% csrf_token %}
+          
+          {% for field in form %}
+            <div>
+              <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                {{ field.label }}
+              </label>
+              <div class="relative">
+                {{ field }}
+                {% if field.name == 'password' %}
+                  <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none" onclick="togglePassword('{{ field.id_for_label }}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                {% endif %}
+              </div>
+              {% if field.errors %}
+                <p class="mt-2 text-sm text-red-600 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  {{ field.errors.0 }}
+                </p>
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          {% comment %} <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+              <label for="remember-me" class="ml-2 block text-sm text-gray-700">Remember me</label>
+            </div>
+            <div class="text-sm">
+              <a href="#" class="font-medium form-link">Forgot password?</a>
+            </div>
+          </div> {% endcomment %}
+
+          <button type="submit" class="w-full submit-btn text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+            Sign in
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-1 -mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </form>
+
+        <div class="mt-8 text-center text-sm text-gray-500">
+          Don't have an account? 
+          <a href="{% url 'register' %}" class="form-link font-medium cursor-pointer">Register here</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Password toggle functionality
+  function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+    field.setAttribute('type', type);
+    
+    // Update icon
+    const icon = document.querySelector(`button[onclick="togglePassword('${fieldId}')] svg`);
+    if (type === 'text') {
+      icon.innerHTML = `
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      `;
+    } else {
+      icon.innerHTML = `
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      `;
+    }
+  }
+
+  // Initialize all form inputs with proper styling
+  document.querySelectorAll("input").forEach(input => {
+    if (input.type !== 'checkbox') {
+      input.classList.add(
+        "w-full", 
+        "px-4", 
+        "py-3", 
+        "border", 
+        "border-gray-300", 
+        "rounded-lg", 
+        "focus:outline-none", 
+        "input-field",
+        "text-gray-700",
+        "placeholder-gray-400"
+      );
+    }
+  });
+</script>
+
+{% endblock %}

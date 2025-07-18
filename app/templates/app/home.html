@@ -1,0 +1,159 @@
+{% extends 'app/base.html' %}
+{% block content %}
+
+<style>
+  body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.41), rgba(240, 253, 244, 0.53)), url('https://i.postimg.cc/bvCs3vRZ/11.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+  .hero-section {
+    background: linear-gradient(rgba(16, 185, 129, 0.39), rgba(5, 150, 104, 0.41)), url('https://i.postimg.cc/BvsW8c93/10.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 85vh;
+  }
+  .feature-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(209, 213, 219, 0.69);
+    background: rgba(255, 255, 255, 0.31);
+  }
+  .feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1);
+    border-color: #a7f3d0;
+  }
+  .cta-button {
+    background: linear-gradient(to right, #10b981, #059669);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+  }
+  .cta-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #059669, #10b981);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .cta-button:hover::after {
+    opacity: 1;
+  }
+  .cta-button span {
+    position: relative;
+    z-index: 1;
+  }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.42);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  }
+  .testimonial-card {
+    background: rgba(255, 255, 255, 0.47);
+    border-left: 4px solid #10b98168;
+  }
+</style>
+
+<!-- Hero Section with Big Image -->
+<section class="hero-section flex items-center">
+  <div class="max-w-6xl mx-auto px-4 py-20 text-center">
+    <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+      <span>MultiRx</span> Prescription Platform
+    </h1>
+    <p class="text-xl md:text-2xl text-white max-w-3xl mx-auto mb-10 opacity-90">
+      Advanced prescription management and patient care system for modern healthcare professionals
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="#" class="cta-button text-white font-medium py-4 px-10 rounded-xl text-lg">
+        <span>Get Started</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Streamline Your Medical Practice</h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        MultiRx combines powerful prescription management with intuitive patient care tools
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Feature 1 -->
+      <div class="feature-card p-8 rounded-2xl">
+        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4">Error-Free Prescriptions</h3>
+        <p class="text-gray-600 mb-6">
+          Reduce medication errors with our intelligent system that includes drug interaction checks and dosage validation.
+        </p>
+        <a href="{% url 'prescribe' %}" class="text-emerald-600 font-medium flex items-center">
+          Learn more
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+      
+      <!-- Feature 2 -->
+      <div class="feature-card p-8 rounded-2xl">
+        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4">Patient Management</h3>
+        <p class="text-gray-600 mb-6">
+          Comprehensive patient records with medical history, allergies, and previous prescriptions all in one place.
+        </p>
+        <a href="{% url 'search' %}" class="text-emerald-600 font-medium flex items-center">
+          Learn more
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+      
+      <!-- Feature 3 -->
+      <div class="feature-card p-8 rounded-2xl">
+        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4">Secure & Compliant</h3>
+        <p class="text-gray-600 mb-6">
+          HIPAA-compliant platform with end-to-end encryption to protect patient data and ensure privacy.
+        </p>
+        <a href="#" class="text-emerald-600 font-medium flex items-center">
+          Learn more
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+{% endblock %}
