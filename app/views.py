@@ -272,7 +272,6 @@ def prescription_pdf(request, prescription_id):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
-
 @login_required
 def search_view(request):
     query = request.GET.get('q', '').strip()
