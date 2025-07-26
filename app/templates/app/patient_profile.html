@@ -1,0 +1,235 @@
+{% extends 'app/base.html' %}
+{% load custom_filters %}
+{% block content %}
+<style>
+  body {
+    background-image: linear-gradient(rgba(240, 255, 240, 0.6), rgba(240, 255, 240, 0.56)),
+                     url('https://i.postimg.cc/YC8nFr9f/8.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+  }
+</style>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-white bg-opacity-90 rounded-lg shadow-lg">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
+    <div>
+      <h2 class="text-3xl font-bold text-gray-800 mb-1">{{ patient.name }}</h2>
+      <p class="text-sm text-gray-600">
+        <i class="fas fa-user mr-1"></i> Age: {{ patient.age }} &nbsp;
+        <i class="fas fa-venus-mars mr-1"></i> {{ patient.gender }} &nbsp;
+        <i class="fas fa-map-marker-alt mr-1"></i> {{ patient.address }}
+      </p>
+    </div>
+    <div class="flex space-x-3">
+      <a href="{% url 'prescribe_with_patient' patient.id %}" 
+        class="px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm">
+        <i class="fas fa-file-medical mr-1"></i> Create Another Prescription
+      </a>
+      <a href="{% url 'delete_patient' patient.id %}" class="px-4 py-2 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm">
+        <i class="fas fa-trash mr-1"></i> Delete Patient
+      </a>
+    </div>
+  </div>
+
+    <!-- Prescription History -->
+  <div class="mt-8 bg-gray-100 p-4 rounded-lg">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3"><i class="fas fa-prescription-bottle-alt text-green-600 mr-2"></i>Prescriptions</h3>
+    
+    <ul class="space-y-2 text-sm text-gray-700">
+      {% for prescription in patient.prescriptions.all %}
+        <li class="flex items-center justify-between border-b pb-1">
+          <span>{{ prescription.created_at|date:"Y-m-d H:i" }}</span>
+          <a href="{% url 'prescription_pdf' prescription.id %}" target="_blank" class="text-blue-600 hover:underline text-sm">
+            <i class="fas fa-file-pdf mr-1"></i>Download PDF
+          </a>
+        </li>
+      {% empty %}
+        <li>No prescriptions yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Problems Section -->
+<div class="bg-gray-100 p-4 rounded-lg">
+  <h4 class="font-semibold text-gray-700 mb-2">
+    <i class="fas fa-stethoscope mr-2 text-green-600"></i> Problems
+  </h4>
+  <div class="text-gray-600">
+    {% if problems %}
+      <ul class="list-disc pl-5">
+        {% for problem in problems %}
+          <li>{{ problem.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      -
+    {% endif %}
+  </div>
+</div>
+
+<!-- Examinations Section -->
+<div class="bg-gray-100 p-4 rounded-lg">
+  <h4 class="font-semibold text-gray-700 mb-2">
+    <i class="fas fa-clipboard-check mr-2 text-green-600"></i> Examinations
+  </h4>
+  <div class="text-gray-600">
+    {% if examinations %}
+      <ul class="list-disc pl-5">
+        {% for exam in examinations %}
+          <li>{{ exam.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      -
+    {% endif %}
+  </div>
+</div>
+
+<!-- Reports Section -->
+<div class="bg-gray-100 p-4 rounded-lg">
+  <h4 class="font-semibold text-gray-700 mb-2">
+    <i class="fas fa-flask mr-2 text-green-600"></i> Reports
+  </h4>
+  <div class="text-gray-600">
+    {% if reports %}
+      {% for report in reports %}
+        <div class="mb-1 last:mb-0">
+          <span class="font-medium">{{ report.name }}</span>: {{ report.result }}
+        </div>
+      {% endfor %}
+    {% else %}
+      -
+    {% endif %}
+  </div>
+</div>
+
+<!-- Medicines Section -->
+<div class="bg-gray-100 p-4 rounded-lg">
+  <h4 class="font-semibold text-gray-700 mb-2">
+    <i class="fas fa-pills mr-2 text-green-600"></i> Medicines
+  </h4>
+  <div class="text-gray-600">
+    {% if medicines %}
+      {% for medicine in medicines %}
+        <div class="mb-2 last:mb-0">
+          <div class="font-medium">{{ medicine.name }} ({{ medicine.strength }})</div>
+          <div class="text-sm text-gray-500">
+            {{ medicine.frequency }} for {{ medicine.days }} days
+            {% if medicine.remark %} • {{ medicine.remark }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      -
+    {% endif %}
+  </div>
+</div>
+
+<!-- Images Section -->
+{% if images %}
+<div class="mt-6">
+  <button onclick="toggleImages('image-block')" class="text-green-600 underline mb-2">
+    See Reports
+  </button>
+  <div id="image-block" class="hidden flex flex-wrap gap-3 mt-2">
+    {% for img in images %}
+      <img src="{{ img.image.url }}" alt="Report Image"
+           class="w-32 h-32 object-cover rounded border cursor-pointer hover:border-green-400"
+           onclick="openModal('{{ img.image.url }}')">
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+  <!-- Images -->
+  {% if patient.images.all %}
+  <div class="mt-6">
+    <button onclick="toggleImages('image-block')" class="text-green-600 underline mb-2">See Reports</button>
+    <div id="image-block" class="hidden flex flex-wrap gap-3 mt-2">
+      {% for img in patient.images.all %}
+      <img src="{{ img.image.url }}" alt="Image"
+           class="w-32 h-32 object-cover rounded border cursor-pointer hover:border-green-400"
+           onclick="openModal('{{ img.image.url }}')">
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal for full-screen image -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50 flex flex-col items-center justify-center p-4">
+  <!-- Close button - fixed position at top-right -->
+  <button onclick="closeModal()" 
+          class="fixed top-4 right-4 z-50 bg-white/90 hover:bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+    <i class="fas fa-times text-xl"></i>
+  </button>
+  
+  <!-- Image container with proper constraints -->
+  <div class="w-full h-full flex items-center justify-center">
+    <img id="modalImg" class="max-w-full max-h-full object-contain">
+  </div>
+  
+  <!-- Optional close button at bottom -->
+  <button onclick="closeModal()" 
+          class="fixed bottom-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow-lg">
+    <i class="fas fa-times mr-2"></i> Close
+  </button>
+</div>
+
+<script>
+  function toggleImages(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hidden');
+  }
+  
+  function openModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImg');
+    img.src = src;
+    
+    // Reset image style
+    img.style.maxWidth = '';
+    img.style.maxHeight = '';
+    
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+    
+    // Adjust for very tall images
+    setTimeout(() => {
+      const viewportHeight = window.innerHeight;
+      const imgHeight = img.naturalHeight;
+      if (imgHeight > viewportHeight * 0.9) {
+        img.style.maxHeight = '90vh';
+      }
+    }, 50);
+  }
+  
+  function closeModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+</script>
+
+<style>
+  #imageModal {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 2rem; /* Gives space around edges */
+  }
+  
+  #imageModal img {
+    max-width: calc(100vw - 4rem);
+    max-height: calc(100vh - 8rem);
+    object-fit: contain;
+  }
+  
+  body.overflow-hidden {
+    overflow: hidden;
+  }
+</style>
+{% endblock %}

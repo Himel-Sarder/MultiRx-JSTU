@@ -7,6 +7,10 @@
   <title>Medical Prescription</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    @font-face {
+      font-family: 'TiroBangla';
+      src: url('/static/fonts/TiroBangla-Regular.ttf') format('truetype');
+    }
     * {
       margin: 0;
       padding: 0;
@@ -16,6 +20,7 @@
     }
     
     body {
+      font-family: 'TiroBangla', serif;
       background: white;
       padding: 5mm;
       position: relative;
@@ -359,26 +364,24 @@
       </div>
     </div>
     
-    <!-- Patient Information -->
+    <!-- Patient Information Section -->
     <div class="patient-info">
       <table class="info-table">
+        <tr>
+          <td class="info-label">Patient ID</td>
+          <td class="info-value">{{ patient_id_formatted }}</td>
+          <td class="info-label">Prescription No</td>
+          <td class="info-value">#{{ prescription_id_formatted }}</td>
+        </tr>
         <tr>
           <td class="info-label">Patient Name</td>
           <td class="info-value">{{ patient.name }}</td>
           <td class="info-label">Age</td>
           <td class="info-value">{{ patient.age }} years</td>
-          <td class="info-label">Gender</td>
-          <td class="info-value">{{ patient.gender}}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Address</td>
-          <td class="info-value" colspan="5">{{ patient.address }}</td>
         </tr>
         <tr>
           <td class="info-label">Date</td>
           <td class="info-value">{{ date }}</td>
-          <td class="info-label">Prescription No</td>
-          <td class="info-value">RX-{{ year }}-{{ prescription_id }}</td>
           <td class="info-label">Time</td>
           <td class="info-value">{{ time }}</td>
         </tr>
@@ -387,89 +390,106 @@
     
     <!-- Two-column Content -->
     <div class="content-columns">
-      <!-- Left Column -->
+      <!-- Left Column (Problems, Examinations, Reports) -->
       <div class="left-column">
-        <!-- Problems -->
+        <!-- Problems Section -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-diagnoses"></i> Problems
           </div>
           <ul class="item-list">
-            {% for p in patient.problems.all %}
-              <li>{{ p.description }}</li>
+            {% for problem in prescription.problems.all %}
+              <li>{{ problem.description }}</li>
+            {% empty %}
+              <li>No problems listed</li>
             {% endfor %}
           </ul>
         </div>
-        
-        <!-- Examinations -->
+
+        <!-- Examinations Section -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-stethoscope"></i> Examinations
           </div>
           <ul class="item-list">
-            {% for e in patient.examinations.all %}
-              <li>{{ e.description }}</li>
+            {% for exam in prescription.examinations.all %}
+              <li>{{ exam.description }}</li>
+            {% empty %}
+              <li>No examinations listed</li>
             {% endfor %}
           </ul>
         </div>
-        
-        <!-- Reports -->
+
+        <!-- Reports Section -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-file-medical"></i> Reports
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Result</th>
-              </tr>
-            </thead>
             <tbody>
-              {% for r in patient.reports.all %}
-              <tr>
-                <td>{{ r.name }}</td>
-                <td>{{ r.result }}</td>
-              </tr>
+              {% for report in prescription.reports.all %}
+                <tr>
+                  <td>{{ report.name }}</td>
+                  <td>{{ report.result }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="2">No reports listed</td>
+                </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
       
-      <!-- Right Column -->
+      <!-- Right Column (Medicines with RX symbol) -->
       <div class="right-column">
-        <!-- Rx Symbol -->
+        <!-- RX Symbol Section -->
         <div class="rx-container">
           <div class="rx-symbol">℞</div>
-          <div class="rx-text">Prescription</div>
         </div>
         
-        <!-- Medicines -->
-        <table>
-          <thead>
-            <tr>
-              <th>Drug Name</th>
-              <th>Strength</th>
-              <th>Frequency</th>
-              <th>Remark</th>
-              <th>Days</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in patient.medicines.all %}
-            <tr>
-              <td>{{ m.name }}</td>
-              <td>{{ m.strength }}</td>
-              <td>{{ m.frequency }}</td>
-              <td>{{ m.remark }}</td>
-              <td>{{ m.days }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <!-- Medicines Section -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-prescription-bottle-alt"></i> Medicines
+          </div>
+          <table>
+            <tbody>
+              {% for medicine in prescription.medicines.all %}
+                <tr>
+                  <td>{{ medicine.name }}</td>
+                  <td>{{ medicine.strength }}</td>
+                  <td>{{ medicine.frequency }}</td>
+                  <td>{{ medicine.remark }}</td>
+                  <td>
+                    {% if medicine.days == 1 %}১ দিন
+                    {% elif medicine.days == 2 %}২ দিন
+                    {% elif medicine.days == 3 %}৩ দিন
+                    {% elif medicine.days == 5 %}৫ দিন
+                    {% elif medicine.days == 7 %}৭ দিন
+                    {% elif medicine.days == 10 %}১০ দিন
+                    {% elif medicine.days == 14 %}১৪ দিন
+                    {% elif medicine.days == 21 %}২১ দিন
+                    {% elif medicine.days == 30 %}৩০ দিন
+                    {% elif medicine.days == 45 %}৪৫ দিন
+                    {% elif medicine.days == 60 %}৬০ দিন
+                    {% elif medicine.days == 90 %}৯০ দিন
+                    {% else %}{{ medicine.days }} দিন
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5">No medicines prescribed</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+    
     
     <!-- Doctor Signature -->
     <div class="signature-area">
@@ -480,7 +500,7 @@
     
     <!-- Footer Note -->
     <div class="footer-note">
-      <i class="fas fa-exclamation-circle"></i> This prescription is valid for 30 days from issue date. Do not share medications. Follow dosage instructions carefully.
+      <i class="fas fa-exclamation-circle"></i> Follow dosage instructions carefully.
     </div>
   </div>
 </body>

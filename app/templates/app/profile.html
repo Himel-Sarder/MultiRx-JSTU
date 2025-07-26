@@ -61,20 +61,20 @@
   .profile-info {
     padding-top: 1.5rem;
   }
-  .camera-icon {
-    width: 44px;
-    height: 44px;
+  .change-picture-btn {
     background: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    color: #10b981;
+    padding: 0.5rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin-top: 1rem;
   }
-  .camera-icon:hover {
-    transform: scale(1.1);
+  .change-picture-btn:hover {
     background: #f0fdf4;
+    transform: translateY(-2px);
   }
   @media (max-width: 1024px) {
     .profile-grid {
@@ -116,11 +116,13 @@
     <!-- Main Profile Content -->
     <div class="p-8">
       <div class="profile-grid">
-        <!-- Left Column - Extra Large Profile Picture -->
+        <!-- Left Column - Profile Picture and Basic Info -->
         <div class="flex flex-col items-center">
+          <!-- Profile Picture Section -->
           <div class="relative mb-6">
-            {% if doctor.profile_picture %}
-              <img src="{{ doctor.profile_picture.url }}" alt="Profile Picture" 
+            {% if doctor.profile_picture and doctor.profile_picture.url %}
+              <img src="{{ doctor.profile_picture.url }}?{% now 'U' %}" 
+                   alt="Profile Picture" 
                    class="profile-picture-container rounded-full object-cover">
             {% else %}
               <div class="profile-picture-container rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
@@ -129,21 +131,19 @@
                 </svg>
               </div>
             {% endif %}
-            <label for="id_profile_picture" class="absolute bottom-6 right-6 cursor-pointer">
-              <div class="camera-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <input type="file" name="profile_picture" accept="image/*" id="id_profile_picture" class="hidden">
-            </label>
+            
+            <!-- Change Picture Button -->
+            <div class="absolute bottom-6 inset-x-0 flex justify-center">
+              <a href="{% url 'profile_picture_change' %}" class="change-picture-btn">
+                Change Picture
+              </a>
+            </div>
           </div>
-          
-          <div class="text-center">
+
+          <div class="text-center mt-4">
             <h3 class="text-2xl font-bold text-white">Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h3>
             <div class="specialization-badge">
-              Asthma, Chest Diseases & Medicine Specialist
+              {{ doctor.specialization|default:"Specialization" }}
             </div>
             <p class="text-white text-base mt-4">{{ doctor.email }}</p>
             <p class="text-sm text-white mt-2">Member since {{ doctor.date_joined|date:"F Y" }}</p>
@@ -213,51 +213,29 @@
 </div>
 
 <script>
-  // Initialize all form inputs with proper styling
-  document.querySelectorAll("input, textarea, select").forEach(input => {
-    input.classList.add(
-      "w-full",
-      "px-4",
-      "py-3",
-      "border",
-      "border-gray-300",
-      "rounded-lg",
-      "focus:outline-none",
-      "input-field",
-      "text-gray-700",
-      "text-base"
-    );
-    
-    if (input.id === "id_bio") {
-      input.classList.add("bio-field");
-    }
-    
-    // Add error class if field has errors
-    if (input.classList.contains("is-invalid")) {
-      input.classList.add("border-red-500");
-    }
-  });
-
-  // Preview profile picture when selected
-  document.getElementById('id_profile_picture').addEventListener('change', function(e) {
-    if (e.target.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const profilePic = document.querySelector('.profile-picture-container');
-        if (profilePic.tagName === 'IMG') {
-          profilePic.src = event.target.result;
-        } else {
-          // Replace the placeholder div with an image
-          const newImg = document.createElement('img');
-          newImg.src = event.target.result;
-          newImg.className = profilePic.className + ' object-cover';
-          newImg.alt = 'Profile Picture';
-          profilePic.parentNode.replaceChild(newImg, profilePic);
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all form inputs with proper styling
+    document.querySelectorAll("input, textarea, select").forEach(input => {
+        if (input.type !== 'checkbox' && input.type !== 'file') {
+            input.classList.add(
+                "w-full",
+                "px-4",
+                "py-3",
+                "border",
+                "border-gray-300",
+                "rounded-lg",
+                "focus:outline-none",
+                "input-field",
+                "text-gray-700",
+                "text-base"
+            );
+            
+            if (input.id === "id_bio") {
+                input.classList.add("bio-field");
+            }
         }
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    }
-  });
+    });
+});
 </script>
 
 {% endblock %}
