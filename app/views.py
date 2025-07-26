@@ -213,6 +213,10 @@ def prescribe_with_patient(request, patient_id):
     }
     return render(request, 'app/prescribe.html', context)
 
+import os
+from django.conf import settings
+from weasyprint import HTML, CSS
+
 @login_required
 def prescription_pdf(request, prescription_id):
     prescription = get_object_or_404(
@@ -221,8 +225,7 @@ def prescription_pdf(request, prescription_id):
         id=prescription_id,
         patient__doctor=request.user
     )
-    
-    # Get current time in the local timezone
+
     now = timezone.localtime(timezone.now())
     
     context = {
@@ -241,35 +244,34 @@ def prescription_pdf(request, prescription_id):
     }
 
     html_string = render_to_string('app/prescription_pdf.html', context)
-    
-    # Generate PDF with Bengali font support
-    html = HTML(
-        string=html_string,
-        base_url=request.build_absolute_uri(),
-        encoding='utf-8'
-    )
-    
-    # Configure font settings
+
+    # Generate correct absolute font path (convert Windows slashes to URL slashes)
+    font_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'TiroBangla-Regular.ttf').replace('\\', '/')
+    font_uri = f"file://{font_path}"
+
+    # Generate PDF
+    html = HTML(string=html_string, base_url=request.build_absolute_uri())
     pdf_file = html.write_pdf(
         stylesheets=[
-            CSS(string='''
-                @font-face {
+            CSS(string=f'''
+                @font-face {{
                     font-family: 'Tiro Bangla';
-                    src: url('/static/fonts/TiroBangla-Regular.ttf') format('truetype');
-                }
-                body {
+                    src: url('{font_uri}') format('truetype');
+                }}
+                body {{
                     font-family: 'Tiro Bangla', Arial, sans-serif;
-                }
+                }}
             ''')
         ]
     )
-    
+
     filename = f"prescription_{prescription.patient.name}_P{prescription.patient.id}_Pres{prescription.id}.pdf"
     filename = filename.replace(" ", "_").replace("/", "-")
 
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
 
 @login_required
 def search_view(request):
