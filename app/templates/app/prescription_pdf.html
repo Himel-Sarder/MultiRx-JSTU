@@ -466,15 +466,16 @@
                     {% if medicine.days == 1 %}১ দিন
                     {% elif medicine.days == 2 %}২ দিন
                     {% elif medicine.days == 3 %}৩ দিন
+                    {% elif medicine.days == 4 %}৪ দিন
                     {% elif medicine.days == 5 %}৫ দিন
-                    {% elif medicine.days == 7 %}৭ দিন
                     {% elif medicine.days == 10 %}১০ দিন
-                    {% elif medicine.days == 14 %}১৪ দিন
-                    {% elif medicine.days == 21 %}২১ দিন
-                    {% elif medicine.days == 30 %}৩০ দিন
-                    {% elif medicine.days == 45 %}৪৫ দিন
-                    {% elif medicine.days == 60 %}৬০ দিন
-                    {% elif medicine.days == 90 %}৯০ দিন
+                    {% elif medicine.days == 7 %}১ সপ্তাহ
+                    {% elif medicine.days == 14 %}২ সপ্তাহ
+                    {% elif medicine.days == 21 %}৩ সপ্তাহ
+                    {% elif medicine.days == 30 %}১ মাস
+                    {% elif medicine.days == 45 %}১.৫ মাস
+                    {% elif medicine.days == 60 %}২ মাস
+                    {% elif medicine.days == 90 %}৩ মাস
                     {% else %}{{ medicine.days }} দিন
                     {% endif %}
                   </td>
