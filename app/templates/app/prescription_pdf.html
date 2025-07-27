@@ -463,6 +463,7 @@
                   <td>{{ medicine.frequency }}</td>
                   <td>{{ medicine.remark }}</td>
                   <td>
+                    {% if medicine.days == 1000 %}চলবে
                     {% if medicine.days == 1 %}১ দিন
                     {% elif medicine.days == 2 %}২ দিন
                     {% elif medicine.days == 3 %}৩ দিন
