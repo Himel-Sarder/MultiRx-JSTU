@@ -719,11 +719,9 @@ def examination_autocomplete(request):
     data = [{'name': e['description'], 'count': e['total']} for e in examinations]
     return JsonResponse(data, safe=False)
 
-
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import ProfilePictureForm
-
 
 @login_required
 def profile_picture_change(request):
@@ -731,14 +729,12 @@ def profile_picture_change(request):
     form = ProfilePictureForm()
     return render(request, 'app/profile_pic_change.html', {'form': form})
 
-
 # views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import os
 from django.conf import settings
-
 
 @login_required
 def profile_picture_update(request):
@@ -750,12 +746,12 @@ def profile_picture_update(request):
                 old_file = request.user.profile_picture.path
                 if os.path.exists(old_file):
                     os.remove(old_file)
-
+            
             # Save the form (which includes the new picture)
             form.save()
             messages.success(request, "Profile picture updated successfully!")
             return redirect('profile')
     else:
         form = ProfilePictureForm(instance=request.user)
-
+    
     return render(request, 'app/profile_pic_change.html', {'form': form})
