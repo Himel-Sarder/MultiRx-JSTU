@@ -291,6 +291,7 @@ select.form-input {
             <div>
               <select name="medicine_days" class="form-input">
                 <option value="">Select Days</option>
+                    <option value="1000">চলবে</option>
                     <option value="1">১ দিন</option>
                     <option value="2">২ দিন</option>
                     <option value="3">৩ দিন</option>
@@ -303,7 +304,6 @@ select.form-input {
                     <option value="45">১.৫ মাস</option>
                     <option value="60">২ মাস</option>
                     <option value="90">৩ মাস</option>
-
               </select>
             </div>
           </div>
@@ -614,6 +614,7 @@ function addMedicineField(name = '', strength = '', frequency = '', remark = '',
                 <div>
                     <select name="medicine_days" class="form-input">
                         <option value="">Select Days</option>
+                        <option value="1000"  ${days === '1000' ? 'selected' : ''}>চলবে</option>
                         <option value="1"  ${days === '1' ? 'selected' : ''}>১ দিন</option>
                         <option value="2"  ${days === '2' ? 'selected' : ''}>২ দিন</option>
                         <option value="3"  ${days === '3' ? 'selected' : ''}>৩ দিন</option>
