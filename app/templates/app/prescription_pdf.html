@@ -344,7 +344,7 @@
     <!-- Header -->
     <div class="prescription-header">
       <div class="logo-container">
-        <img src="https://i.postimg.cc/KYrRtB8W/logo.png" alt="Hospital Logo" class="logo" />
+        <img src="{% static 'app/images/logo.png' %}" alt="Hospital Logo" class="logo" />
       </div>
       
       <div class="header-content">
@@ -475,7 +475,7 @@
                     {% elif medicine.days == 30 %}১ মাস
                     {% elif medicine.days == 45 %}১.৫ মাস
                     {% elif medicine.days == 60 %}২ মাস
-                    {% elif medicine.days == 90 %}৩ মাস
+                    {% elif medicine.days == 90 %}৩ মাস 
                     {% else %}{{ medicine.days }} দিন
                     {% endif %}
                   </td>
