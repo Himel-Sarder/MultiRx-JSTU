@@ -121,8 +121,8 @@
           <!-- Profile Picture Section -->
           <div class="relative mb-6">
             {% if doctor.profile_picture and doctor.profile_picture.url %}
-              <img src="{{ doctor.profile_picture.url }}?{% now 'U' %}" 
-                   alt="Profile Picture" 
+              <img src="{{ doctor.profile_picture.url }}?{% now 'U' %}"
+                   alt="Profile Picture"
                    class="profile-picture-container rounded-full object-cover">
             {% else %}
               <div class="profile-picture-container rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
@@ -131,7 +131,7 @@
                 </svg>
               </div>
             {% endif %}
-            
+
             <!-- Change Picture Button -->
             <div class="absolute bottom-6 inset-x-0 flex justify-center">
               <a href="{% url 'profile_picture_change' %}" class="change-picture-btn">
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 "text-gray-700",
                 "text-base"
             );
-            
+
             if (input.id === "id_bio") {
                 input.classList.add("bio-field");
             }

@@ -1,4 +1,3 @@
-import time
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -60,17 +59,31 @@ def profile_view(request):
     if request.method == 'POST':
         form = DoctorProfileUpdateForm(request.POST, request.FILES, instance=doctor)
         if form.is_valid():
-            # Handle picture removal
-            if request.POST.get('remove_profile_picture'):
-                form.cleaned_data['remove_profile_picture'] = True
+            # Handle file upload
+            if 'profile_picture' in request.FILES:
+                # Delete old picture if it exists
+                if doctor.profile_picture:
+                    doctor.profile_picture.delete()
+                doctor.profile_picture = request.FILES['profile_picture']
+            elif form.cleaned_data.get('profile_picture-clear'):
+                # Handle profile picture clear
+                if doctor.profile_picture:
+                    doctor.profile_picture.delete()
+                    doctor.profile_picture = None
             
+            # Save all other fields
             form.save()
             messages.success(request, "Profile updated successfully!")
             return redirect('profile')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = DoctorProfileUpdateForm(instance=doctor)
     
-    return render(request, 'app/profile.html', {'form': form, 'doctor': doctor})
+    return render(request, 'app/profile.html', {
+        'form': form,
+        'doctor': doctor
+    })
 
 
 @login_required
@@ -711,11 +724,13 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import ProfilePictureForm
 
+
 @login_required
 def profile_picture_change(request):
     # Just render the form page
     form = ProfilePictureForm()
     return render(request, 'app/profile_pic_change.html', {'form': form})
+
 
 # views.py
 from django.shortcuts import render, redirect
@@ -723,6 +738,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import os
 from django.conf import settings
+
 
 @login_required
 def profile_picture_update(request):
@@ -734,12 +750,12 @@ def profile_picture_update(request):
                 old_file = request.user.profile_picture.path
                 if os.path.exists(old_file):
                     os.remove(old_file)
-            
+
             # Save the form (which includes the new picture)
             form.save()
             messages.success(request, "Profile picture updated successfully!")
             return redirect('profile')
     else:
         form = ProfilePictureForm(instance=request.user)
-    
+
     return render(request, 'app/profile_pic_change.html', {'form': form})

@@ -4,8 +4,6 @@ from .models import Doctor
 from .models import Patient
 
 
-
-
 class PatientForm(forms.ModelForm):
     class Meta:
         model = Patient
@@ -53,59 +51,58 @@ class DoctorRegistrationForm(UserCreationForm):
             raise forms.ValidationError("You can't register. This is a private website.")
         return doctor_id
 
+
 class DoctorLoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput)
 
 
-
-
 class DoctorProfileUpdateForm(forms.ModelForm):
-
     class Meta:
         model = Doctor
         fields = ['profile_picture', 'first_name', 'last_name', 'email', 'bio', 'specialization']
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['profile_picture'].widget.attrs.update({
             'accept': 'image/*',
             'class': 'hidden'
         })
-        
+
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
-        
+
         # Handle new profile picture
         if 'profile_picture' in self.changed_data:
             # Delete old picture if exists
             if instance.profile_picture:
                 instance.profile_picture.delete()
-            
+
         if commit:
             instance.save()
-        
+
         return instance
-    
+
+
 from django import forms
 from .models import Doctor
+
 
 class ProfilePictureForm(forms.ModelForm):
     class Meta:
         model = Doctor
         fields = ['profile_picture']
-    
+
     def clean_profile_picture(self):
         picture = self.cleaned_data.get('profile_picture')
         if picture:
             # Validate file size (2MB max)
             if picture.size > 2 * 1024 * 1024:
                 raise forms.ValidationError("Image file too large ( > 2MB )")
-            
+
             # Validate file type
             valid_types = ['image/jpeg', 'image/png', 'image/gif']
             if picture.content_type not in valid_types:
                 raise forms.ValidationError("Only JPEG, PNG or GIF images are allowed")
-        
+
         return picture
