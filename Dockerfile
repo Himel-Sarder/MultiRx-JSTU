@@ -32,3 +32,5 @@ RUN python manage.py collectstatic --noinput
 
 CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:8000"]
 
+# At the end of your Dockerfile
+CMD gunicorn --bind 0.0.0.0:10000 multirx.wsgi:application
