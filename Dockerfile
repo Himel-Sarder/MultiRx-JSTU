@@ -24,13 +24,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Explicitly install gunicorn (ensure it's available)
+RUN pip install gunicorn==20.1.0
+
 # Copy Django project
 COPY . .
 
 # Collect static
 RUN python manage.py collectstatic --noinput
 
-CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:8000"]
-
-# At the end of your Dockerfile
-CMD gunicorn --bind 0.0.0.0:10000 multirx.wsgi:application
+# Use a single CMD instruction (Render uses port 10000)
+CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:10000"]
