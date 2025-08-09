@@ -40,6 +40,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'multirx.urls'
@@ -140,4 +141,7 @@ DATABASES = {
 AUTHENTICATION_BACKENDS = [
     'app.backends.DoctorIDBackend',
     'django.contrib.auth.backends.ModelBackend',  # Keep this as fallback
+
 ]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
