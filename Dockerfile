@@ -30,5 +30,12 @@ COPY . .
 # Collect static
 RUN python manage.py collectstatic --noinput
 
+# Run migrations (add this)
+RUN python manage.py migrate
+
+# Health check (add this)
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:10000/health/ || exit 1
+
 # Run Gunicorn (Render uses port 10000)
-CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:10000"]
+CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:10000", "--workers", "4"]
