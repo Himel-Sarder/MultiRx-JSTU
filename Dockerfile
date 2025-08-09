@@ -30,5 +30,7 @@ COPY . .
 # Collect static
 RUN python manage.py collectstatic --noinput
 
-CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:8000"]
+CMD exec gunicorn multirx.wsgi:application --timeout 120 --bind 0.0.0.0:$PORT
+
+
 
