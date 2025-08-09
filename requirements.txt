@@ -1,4 +1,5 @@
 dj_database_url
 Django
 openpyxl
+whitenoise
 weasyprint
