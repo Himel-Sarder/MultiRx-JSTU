@@ -24,14 +24,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Explicitly install gunicorn (ensure it's available)
-RUN pip install gunicorn==20.1.0
-
 # Copy Django project
 COPY . .
 
 # Collect static
 RUN python manage.py collectstatic --noinput
 
-# Use a single CMD instruction (Render uses port 10000)
+# Run Gunicorn (Render uses port 10000)
 CMD ["gunicorn", "multirx.wsgi:application", "--timeout", "120", "--bind", "0.0.0.0:10000"]
