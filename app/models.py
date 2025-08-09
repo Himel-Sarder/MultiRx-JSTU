@@ -2,14 +2,52 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
+
+class DoctorManager(BaseUserManager):
+    use_in_migrations = True
+
+    def create_user(self, doctor_id, password=None, **extra_fields):
+        if not doctor_id:
+            raise ValueError('The Doctor ID must be set')
+        extra_fields.setdefault('is_active', True)
+        user = self.model(doctor_id=doctor_id, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, doctor_id, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(doctor_id, password, **extra_fields)
+
+
 class Doctor(AbstractUser):
+    username = None  # Remove default username
     doctor_id = models.CharField(max_length=6, unique=True)
     specialization = models.CharField(max_length=100)
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
+    USERNAME_FIELD = 'doctor_id'
+    REQUIRED_FIELDS = []  # Do not include 'username' here
+
+    objects = DoctorManager()
+
     def __str__(self):
-        return f"{self.username} ({self.doctor_id})"
+        return self.doctor_id
+
+
 
 User = get_user_model()
 
@@ -50,16 +88,17 @@ class Problem(models.Model):
         return self.description
 
 class Examination(models.Model):
-    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='examinations', null=True, blank=True)
-    description = models.CharField(max_length=200)
-
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='examinations')
+    name = models.CharField(max_length=100, default='General Examination')  # Added with default
+    description = models.CharField(max_length=200, blank=True, null=True)
+    
     def __str__(self):
-        return self.description
+        return f"{self.name}: {self.description}"
 
 class Report(models.Model):
     prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='reports')
     name = models.CharField(max_length=100)
-    result = models.CharField(max_length=200)
+    result = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name}: {self.result}"

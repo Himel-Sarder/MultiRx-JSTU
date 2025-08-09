@@ -224,12 +224,15 @@ select.form-input {
       </button>
     </div>
 
+    <!-- Examinations Section - Fixed -->
     <div class="form-section">
       <label class="section-label">Examinations</label>
-      <div id="examinations">
-        <div class="relative">
-          <input type="text" name="examinations" id="examination_0" class="form-input autocomplete" 
-                placeholder="Enter examination details" />
+      <div id="examinations" class="space-y-3">  <!-- Changed ID to examinations -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="relative">
+            <input type="text" name="examination_names" id="examination_name_0" class="form-input autocomplete" placeholder="Examination Name" />
+          </div>
+          <input type="text" name="examination_results" class="form-input" placeholder="Examination Result" />
         </div>
       </div>
       <button type="button" onclick="addExaminationField()" class="btn btn-secondary mt-3">
@@ -240,6 +243,7 @@ select.form-input {
       </button>
     </div>
 
+    <!-- Reports Section - Fixed -->
     <div class="form-section">
       <label class="section-label">Reports</label>
       <div id="reports" class="space-y-3">
@@ -257,6 +261,7 @@ select.form-input {
         Add Report
       </button>
     </div>
+
 
     <!-- Report Images -->
     <div class="form-section">
@@ -291,7 +296,6 @@ select.form-input {
             <div>
               <select name="medicine_days" class="form-input">
                 <option value="">Select Days</option>
-                    <option value="1000">চলবে</option>
                     <option value="1">১ দিন</option>
                     <option value="2">২ দিন</option>
                     <option value="3">৩ দিন</option>
@@ -304,6 +308,7 @@ select.form-input {
                     <option value="45">১.৫ মাস</option>
                     <option value="60">২ মাস</option>
                     <option value="90">৩ মাস</option>
+
               </select>
             </div>
           </div>
@@ -345,8 +350,19 @@ select.form-input {
       <option value="গ্রহণের পরপরই শোয়া যাবে না"><option value="অবশ্যই পূর্ণ কোর্স সম্পন্ন করতে হবে">
     </datalist>
 
+
+    <!-- Updated button section -->
     <div class="flex flex-wrap justify-end gap-3 pt-6">
-      <button type="submit" class="btn btn-primary">
+      <!-- Save button (new) -->
+      <button type="submit" name="action" value="save" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        Save
+      </button>
+      
+      <!-- Save & Generate PDF button (existing) -->
+      <button type="submit" name="action" value="save_and_download" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -549,34 +565,40 @@ function addProblemField(value = '') {
     });
 }
 
-function addExaminationField(value = '') {
+// Updated addExaminationField function
+function addExaminationField(name = '', result = '') {
     examinationIdx++;
     const div = document.getElementById("examinations");
     div.insertAdjacentHTML("beforeend", `
-        <div class="relative mt-3">
-            <input type="text" name="examinations" id="examination_${examinationIdx}" 
-                   class="form-input autocomplete" placeholder="Enter examination details" 
-                   value="${value}" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div class="relative">
+                <input type="text" name="examination_names" id="examination_name_${examinationIdx}" 
+                       class="form-input autocomplete" placeholder="Examination Name" value="${name}" />
+            </div>
+            <input type="text" name="examination_results" class="form-input" 
+                   placeholder="Examination Result" value="${result}" />
         </div>`
     );
     
-    // Attach autocomplete to the new field
-    const input = document.getElementById(`examination_${examinationIdx}`);
+    // Attach autocomplete to the new examination name field
+    const input = document.getElementById(`examination_name_${examinationIdx}`);
     input.addEventListener('input', function() {
-        fetchSuggestions(this.value, 'examination', `examination_${examinationIdx}`);
+        fetchSuggestions(this.value, 'examination', `examination_name_${examinationIdx}`);
     });
 }
 
+// Updated addReportField function
 function addReportField(name = '', result = '') {
     reportIdx++;
     const div = document.getElementById("reports");
     div.insertAdjacentHTML("beforeend", `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             <div class="relative">
-                <input type="text" name="report_names" id="report_name_${reportIdx}" class="form-input autocomplete" 
-                       placeholder="Report Name" value="${name}" />
+                <input type="text" name="report_names" id="report_name_${reportIdx}" 
+                       class="form-input autocomplete" placeholder="Report Name" value="${name}" />
             </div>
-            <input type="text" name="report_results" class="form-input" placeholder="Report Result" value="${result}" />
+            <input type="text" name="report_results" class="form-input" 
+                   placeholder="Report Result" value="${result}" />
         </div>`
     );
     
@@ -586,6 +608,7 @@ function addReportField(name = '', result = '') {
         fetchSuggestions(this.value, 'report', `report_name_${reportIdx}`);
     });
 }
+
 
 function addMedicineField(name = '', strength = '', frequency = '', remark = '', days = '') {
     medIdx++;
@@ -614,7 +637,6 @@ function addMedicineField(name = '', strength = '', frequency = '', remark = '',
                 <div>
                     <select name="medicine_days" class="form-input">
                         <option value="">Select Days</option>
-                        <option value="1000"  ${days === '1000' ? 'selected' : ''}>চলবে</option>
                         <option value="1"  ${days === '1' ? 'selected' : ''}>১ দিন</option>
                         <option value="2"  ${days === '2' ? 'selected' : ''}>২ দিন</option>
                         <option value="3"  ${days === '3' ? 'selected' : ''}>৩ দিন</option>

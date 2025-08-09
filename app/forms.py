@@ -38,28 +38,62 @@ class PatientForm(forms.ModelForm):
         return normalised
 
 
+# forms.py
 class DoctorRegistrationForm(UserCreationForm):
-    doctor_id = forms.CharField(max_length=6, label="Doctor ID")
     specialization = forms.CharField(max_length=100, label="Specialization")
-    email = forms.EmailField(label="Email")
+    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
 
     class Meta:
         model = Doctor
-        fields = ['doctor_id', 'specialization', 'username', 'first_name', 'email', 'password1', 'password2']
+        fields = ['doctor_id', 'specialization', 'password1', 'password2']
 
     def clean_doctor_id(self):
         doctor_id = self.cleaned_data['doctor_id']
         if not (doctor_id.startswith("HF") and len(doctor_id) == 6):
             raise forms.ValidationError("You can't register. This is a private website.")
+        
+        if Doctor.objects.filter(doctor_id=doctor_id).exists():
+            raise forms.ValidationError("This Doctor ID is already registered.")
+            
         return doctor_id
 
+from django import forms
+from django.contrib.auth import get_user_model
+
 class DoctorLoginForm(forms.Form):
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.PasswordInput)
+    doctor_id = forms.CharField(
+        max_length=6,
+        label="Doctor ID",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'HF1234',
+            'autocomplete': 'username',
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none input-field text-gray-700 placeholder-gray-400'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '••••••••',
+            'autocomplete': 'current-password',
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none input-field text-gray-700 placeholder-gray-400'
+        }),
+        label="Password"
+    )
 
-
-
-
+    def clean(self):
+        cleaned_data = super().clean()
+        doctor_id = cleaned_data.get('doctor_id')
+        password = cleaned_data.get('password')
+        
+        if doctor_id and password:
+            # Check if doctor_id starts with HF and is 6 characters
+            if not (doctor_id.startswith("HF") and len(doctor_id) == 6):
+                self.add_error('doctor_id', "Invalid Doctor ID format. Must start with HF and be 6 characters.")
+            
+            # Authentication check is now handled in the view
+        return cleaned_data
+    
+    
 class DoctorProfileUpdateForm(forms.ModelForm):
 
     class Meta:

@@ -23,6 +23,7 @@ from django.utils import timezone
 def home_view(request):
     return render(request, 'app/home.html')
 
+# views.py
 def register_view(request):
     if request.method == 'POST':
         form = DoctorRegistrationForm(request.POST)
@@ -33,19 +34,29 @@ def register_view(request):
         form = DoctorRegistrationForm()
     return render(request, 'app/register.html', {'form': form})
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+
 def login_view(request):
     if request.method == 'POST':
         form = DoctorLoginForm(request.POST)
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            return redirect('profile')
-        else:
-            return render(request, 'app/login.html', {'form': form, 'error': 'Invalid credentials'})
+        if form.is_valid():
+            doctor_id = form.cleaned_data['doctor_id']
+            password = form.cleaned_data['password']
+            user = authenticate(request, doctor_id=doctor_id, password=password)
+            
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Login successful!')
+                return redirect('profile')
+            else:
+                # Add error to the form's non_field_errors
+                form.add_error(None, "Invalid Doctor ID or password")
+        # If form is invalid, it will automatically show field errors
     else:
         form = DoctorLoginForm()
+    
     return render(request, 'app/login.html', {'form': form})
 
 @login_required
@@ -86,68 +97,95 @@ def profile_view(request):
     })
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .models import Patient, Prescription, Problem, Examination, Report, ReportImage, Medicine
+from .forms import PatientForm
+
 @login_required
 def prescribe_view(request):
     if request.method == 'POST':
         patient_form = PatientForm(request.POST)
         if patient_form.is_valid():
-            # Create new patient
-            patient = Patient.objects.create(
-                doctor=request.user,
-                name=patient_form.cleaned_data['name'],
-                age=patient_form.cleaned_data['age'],
-                address=patient_form.cleaned_data['address'],
-                gender=patient_form.cleaned_data['gender']
-            )
+            try:
+                # Create new patient
+                patient = Patient.objects.create(
+                    doctor=request.user,
+                    name=patient_form.cleaned_data['name'],
+                    age=patient_form.cleaned_data['age'],
+                    address=patient_form.cleaned_data['address'],
+                    gender=patient_form.cleaned_data['gender']
+                )
+                
+                # Create prescription
+                prescription = Prescription.objects.create(patient=patient)
+                
+                # Save problems
+                problems = [desc.strip() for desc in request.POST.getlist('problems') if desc.strip()]
+                for desc in problems:
+                    Problem.objects.create(prescription=prescription, description=desc)
+
+                # Save examinations
+                exam_names = request.POST.getlist('examination_names')
+                exam_results = request.POST.getlist('examination_results')
+                for name, result in zip(exam_names, exam_results):
+                    if name.strip():
+                        Examination.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            description=result.strip() if result.strip() else ""
+                        )
+
+                # Save reports
+                report_names = request.POST.getlist('report_names')
+                report_results = request.POST.getlist('report_results')
+                for name, result in zip(report_names, report_results):
+                    if name.strip():
+                        Report.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            result=result.strip() if result.strip() else ""
+                        )
+
+                # Save report images
+                for image in request.FILES.getlist('report_images'):
+                    ReportImage.objects.create(prescription=prescription, image=image)
+
+                # Save medicines
+                med_names = request.POST.getlist('medicine_names')
+                strengths = request.POST.getlist('medicine_strengths')
+                frequencies = request.POST.getlist('medicine_frequencies')
+                remarks = request.POST.getlist('medicine_remarks')
+                days = request.POST.getlist('medicine_days')
+
+                for name, strength, freq, remark, day in zip(med_names, strengths, frequencies, remarks, days):
+                    if name.strip():
+                        Medicine.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            strength=strength.strip(),
+                            frequency=freq.strip(),
+                            remark=remark.strip(),
+                            days=int(day) if day else 0
+                        )
+                
+                # Determine which button was clicked
+                action = request.POST.get('action', 'save_and_download')
+                
+                if action == 'save_and_download':
+                    return redirect('prescription_pdf', prescription_id=prescription.id)
+                else:  # 'save'
+                    messages.success(request, "Prescription saved successfully!")
+                    return redirect('patient_profile', patient_id=patient.id)
             
-            # Create prescription
-            prescription = Prescription.objects.create(patient=patient)
-            
-            # Save problems
-            for desc in request.POST.getlist('problems'):
-                if desc.strip():
-                    Problem.objects.create(prescription=prescription, description=desc.strip())
-
-            # Save examinations
-            for desc in request.POST.getlist('examinations'):
-                if desc.strip():
-                    Examination.objects.create(prescription=prescription, description=desc.strip())
-
-            # Save reports
-            names = request.POST.getlist('report_names')
-            results = request.POST.getlist('report_results')
-            for name, result in zip(names, results):
-                if name.strip() and result.strip():
-                    Report.objects.create(prescription=prescription, name=name.strip(), result=result.strip())
-
-            # Save report images
-            for image in request.FILES.getlist('report_images'):
-                ReportImage.objects.create(prescription=prescription, image=image)
-
-            # Save medicines
-            med_names = request.POST.getlist('medicine_names')
-            strengths = request.POST.getlist('medicine_strengths')
-            frequencies = request.POST.getlist('medicine_frequencies')
-            remarks = request.POST.getlist('medicine_remarks')
-            days = request.POST.getlist('medicine_days')
-
-            for i in range(len(med_names)):
-                name = med_names[i].strip()
-                if name:
-                    Medicine.objects.create(
-                        prescription=prescription,
-                        name=name,
-                        strength=strengths[i].strip(),
-                        frequency=frequencies[i].strip(),
-                        remark=remarks[i].strip(),
-                        days=int(days[i]) if days[i] else 0
-                    )
-
-            return redirect('prescription_pdf', prescription_id=prescription.id)
+            except Exception as e:
+                patient_form.add_error(None, f"An error occurred: {str(e)}")
+                return render(request, 'app/prescribe.html', {'form': patient_form})
     
     # For GET request
     form = PatientForm()
     return render(request, 'app/prescribe.html', {'form': form})
+
 
 @login_required
 def prescribe_with_patient(request, patient_id):
@@ -156,59 +194,80 @@ def prescribe_with_patient(request, patient_id):
     if request.method == 'POST':
         patient_form = PatientForm(request.POST)
         if patient_form.is_valid():
-            # Update patient info
-            patient.name = patient_form.cleaned_data['name']
-            patient.age = patient_form.cleaned_data['age']
-            patient.address = patient_form.cleaned_data['address']
-            patient.gender = patient_form.cleaned_data['gender']
-            patient.save()
+            try:
+                # Update patient info
+                patient.name = patient_form.cleaned_data['name']
+                patient.age = patient_form.cleaned_data['age']
+                patient.address = patient_form.cleaned_data['address']
+                patient.gender = patient_form.cleaned_data['gender']
+                patient.save()
 
-            # Create new prescription
-            prescription = Prescription.objects.create(patient=patient)
+                # Create new prescription
+                prescription = Prescription.objects.create(patient=patient)
+                
+                # Save problems
+                for desc in request.POST.getlist('problems'):
+                    if desc.strip():
+                        Problem.objects.create(prescription=prescription, description=desc.strip())
+
+                # Save examinations
+                exam_names = request.POST.getlist('examination_names')
+                exam_results = request.POST.getlist('examination_results')
+                for name, result in zip(exam_names, exam_results):
+                    if name.strip():
+                        Examination.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            description=result.strip() if result.strip() else ""
+                        )
+
+                # Save reports
+                report_names = request.POST.getlist('report_names')
+                report_results = request.POST.getlist('report_results')
+                for name, result in zip(report_names, report_results):
+                    if name.strip():
+                        Report.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            result=result.strip() if result.strip() else ""
+                        )
+
+                # Save report images
+                for image in request.FILES.getlist('report_images'):
+                    ReportImage.objects.create(prescription=prescription, image=image)
+
+                # Save medicines
+                med_names = request.POST.getlist('medicine_names')
+                strengths = request.POST.getlist('medicine_strengths')
+                frequencies = request.POST.getlist('medicine_frequencies')
+                remarks = request.POST.getlist('medicine_remarks')
+                days = request.POST.getlist('medicine_days')
+
+                for name, strength, freq, remark, day in zip(med_names, strengths, frequencies, remarks, days):
+                    if name.strip():
+                        Medicine.objects.create(
+                            prescription=prescription,
+                            name=name.strip(),
+                            strength=strength.strip(),
+                            frequency=freq.strip(),
+                            remark=remark.strip(),
+                            days=int(day) if day else 0
+                        )
+                
+                # Determine which button was clicked
+                action = request.POST.get('action', 'save_and_download')
+                
+                if action == 'save_and_download':
+                    return redirect('prescription_pdf', prescription_id=prescription.id)
+                else:  # 'save'
+                    messages.success(request, "Prescription saved successfully!")
+                    return redirect('patient_profile', patient_id=patient.id)
             
-            # Save problems
-            for desc in request.POST.getlist('problems'):
-                if desc.strip():
-                    Problem.objects.create(prescription=prescription, description=desc.strip())
-
-            # Save examinations
-            for desc in request.POST.getlist('examinations'):
-                if desc.strip():
-                    Examination.objects.create(prescription=prescription, description=desc.strip())
-
-            # Save reports
-            names = request.POST.getlist('report_names')
-            results = request.POST.getlist('report_results')
-            for name, result in zip(names, results):
-                if name.strip() and result.strip():
-                    Report.objects.create(prescription=prescription, name=name.strip(), result=result.strip())
-
-            # Save report images
-            for image in request.FILES.getlist('report_images'):
-                ReportImage.objects.create(prescription=prescription, image=image)
-
-            # Save medicines
-            med_names = request.POST.getlist('medicine_names')
-            strengths = request.POST.getlist('medicine_strengths')
-            frequencies = request.POST.getlist('medicine_frequencies')
-            remarks = request.POST.getlist('medicine_remarks')
-            days = request.POST.getlist('medicine_days')
-
-            for i in range(len(med_names)):
-                name = med_names[i].strip()
-                if name:
-                    Medicine.objects.create(
-                        prescription=prescription,
-                        name=name,
-                        strength=strengths[i].strip(),
-                        frequency=frequencies[i].strip(),
-                        remark=remarks[i].strip(),
-                        days=int(days[i]) if days[i] else 0
-                    )
-
-            return redirect('prescription_pdf', prescription_id=prescription.id)
+            except Exception as e:
+                patient_form.add_error(None, f"An error occurred: {str(e)}")
+                return render(request, 'app/prescribe.html', {'form': patient_form, 'patient': patient})
     
-    # For GET request - pre-populate with last prescription data if exists
+    # For GET request
     last_prescription = patient.prescriptions.last()
     initial_data = {
         'name': patient.name,
@@ -222,9 +281,10 @@ def prescribe_with_patient(request, patient_id):
     context = {
         'form': form,
         'patient': patient,
-        'last_prescription': last_prescription  # Pass last prescription to template
+        'last_prescription': last_prescription
     }
     return render(request, 'app/prescribe.html', context)
+
 
 @login_required
 def prescription_pdf(request, prescription_id):
