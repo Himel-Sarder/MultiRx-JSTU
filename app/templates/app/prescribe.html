@@ -296,7 +296,6 @@ select.form-input {
             <div>
               <select name="medicine_days" class="form-input">
                 <option value="">Select Days</option>
-                    <option value="1000">চলবে</option>
                     <option value="1">১ দিন</option>
                     <option value="2">২ দিন</option>
                     <option value="3">৩ দিন</option>
@@ -347,6 +346,8 @@ select.form-input {
       <option value="খাবার পর"><option value="খাবার আগে">
       <option value="খালি পেটে"><option value="প্রতিদিন একই সময়ে গ্রহণ করুন">
       <option value="খালি পেটে খাওয়া যাবে না"><option value="ব্যথা হলে">
+      <option value="ঘুমানোর আগে"><option value="নিয়মিত খাওয়া বন্ধ করা যাবে না">
+      <option value="গ্রহণের পরপরই শোয়া যাবে না"><option value="অবশ্যই পূর্ণ কোর্স সম্পন্ন করতে হবে">
     </datalist>
 
 
@@ -636,7 +637,6 @@ function addMedicineField(name = '', strength = '', frequency = '', remark = '',
                 <div>
                     <select name="medicine_days" class="form-input">
                         <option value="">Select Days</option>
-                        <option value="1000"  ${days === '1000' ? 'selected' : ''}>চলবে</option>
                         <option value="1"  ${days === '1' ? 'selected' : ''}>১ দিন</option>
                         <option value="2"  ${days === '2' ? 'selected' : ''}>২ দিন</option>
                         <option value="3"  ${days === '3' ? 'selected' : ''}>৩ দিন</option>
@@ -668,6 +668,5 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
-
 
 {% endblock %}
