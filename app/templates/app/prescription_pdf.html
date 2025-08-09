@@ -470,7 +470,8 @@
                   <td>{{ medicine.frequency }}</td>
                   <td>{{ medicine.remark }}</td>
                   <td>
-                    {% if medicine.days == 1 %}১ দিন
+                    {% if medicine.days == 1000 %}চলবে
+                    {% elif medicine.days == 1 %}১ দিন
                     {% elif medicine.days == 2 %}২ দিন
                     {% elif medicine.days == 3 %}৩ দিন
                     {% elif medicine.days == 5 %}৫ দিন
@@ -510,4 +511,5 @@
     </div>
   </div>
 </body>
+
 </html>
