@@ -110,20 +110,26 @@
     max-height: 200px;
     overflow-y: auto;
     background-color: white;
-    border: 1px solid #e5ebe9ff;
+    border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 50;
+    margin-top: 0.25rem;
   }
   
   .suggestion-item {
     padding: 0.5rem 1rem;
     cursor: pointer;
     font-size: 0.9rem;
+    transition: background-color 0.2s;
   }
   
   .suggestion-item:hover {
     background-color: #f3f4f6;
+  }
+  
+  .hidden {
+    display: none;
   }
   
   .medicine-row {
@@ -141,6 +147,35 @@
     gap: 0.75rem;
   }
   
+  /* Style for select dropdown */
+  select.form-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+  
+  /* New styles for duration selector */
+  .duration-container {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .duration-number {
+    width: 70px;
+    text-align: center;
+  }
+  
+  .duration-unit {
+    flex: 1;
+  }
+  
+  .duration-unit option[value="colbe"] {
+    font-style: italic;
+  }
+
   @media (max-width: 768px) {
     .prescription-container {
       padding: 1.5rem;
@@ -156,44 +191,6 @@
       margin-bottom: 0.75rem;
     }
   }
-
-  .suggestions-box {
-    position: absolute;
-    width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 50;
-    margin-top: 0.25rem;
-}
-
-.suggestion-item {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-}
-
-.suggestion-item:hover {
-    background-color: #f3f4f6;
-}
-
-.hidden {
-    display: none;
-}
-
-/* Style for select dropdown */
-select.form-input {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1rem;
-    padding-right: 2.5rem;
-}
 </style>
 
 <div class="prescription-container">
@@ -224,10 +221,10 @@ select.form-input {
       </button>
     </div>
 
-    <!-- Examinations Section - Fixed -->
+    <!-- Examinations Section -->
     <div class="form-section">
       <label class="section-label">Examinations</label>
-      <div id="examinations" class="space-y-3">  <!-- Changed ID to examinations -->
+      <div id="examinations" class="space-y-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="relative">
             <input type="text" name="examination_names" id="examination_name_0" class="form-input autocomplete" placeholder="Examination Name" />
@@ -243,7 +240,7 @@ select.form-input {
       </button>
     </div>
 
-    <!-- Reports Section - Fixed -->
+    <!-- Reports Section -->
     <div class="form-section">
       <label class="section-label">Reports</label>
       <div id="reports" class="space-y-3">
@@ -261,7 +258,6 @@ select.form-input {
         Add Report
       </button>
     </div>
-
 
     <!-- Report Images -->
     <div class="form-section">
@@ -294,27 +290,22 @@ select.form-input {
                      placeholder="Remark" />
             </div>
             <div>
-              <select name="medicine_days" class="form-input">
-                <option value="">Select Days</option>
-                    <option value="1">১ দিন</option>
-                    <option value="2">২ দিন</option>
-                    <option value="3">৩ দিন</option>
-                    <option value="5">৫ দিন</option>
-                    <option value="7">১ সপ্তাহ</option>
-                    <option value="10">১০ দিন</option>
-                    <option value="14">২ সপ্তাহ</option>
-                    <option value="21">৩ সপ্তাহ</option>
-                    <option value="30">১ মাস</option>
-                    <option value="45">১.৫ মাস</option>
-                    <option value="60">২ মাস</option>
-                    <option value="90">৩ মাস</option>
-
-              </select>
+              <div class="duration-container">
+                <input type="number" name="medicine_days_number" min="0" value="1" 
+                       class="form-input duration-number" placeholder="1">
+                <select name="medicine_days_unit" class="form-input duration-unit">
+                  <option value="din">দিন</option>
+                  <option value="soptaho">সপ্তাহ</option>
+                  <option value="mash">মাস</option>
+                  <option value="bosor">বছর</option>
+                  <option value="colbe">চলবে</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
+        
       <button type="button" onclick="addMedicineField()" class="btn btn-secondary mt-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -350,10 +341,8 @@ select.form-input {
       <option value="গ্রহণের পরপরই শোয়া যাবে না"><option value="অবশ্যই পূর্ণ কোর্স সম্পন্ন করতে হবে">
     </datalist>
 
-
-    <!-- Updated button section -->
+    <!-- Button section -->
     <div class="flex flex-wrap justify-end gap-3 pt-6">
-      <!-- Save button (new) -->
       <button type="submit" name="action" value="save" class="btn btn-secondary">
         <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -361,7 +350,6 @@ select.form-input {
         Save
       </button>
       
-      <!-- Save & Generate PDF button (existing) -->
       <button type="submit" name="action" value="save_and_download" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -382,6 +370,7 @@ let examinationIdx = 0;
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize autocomplete for first medicine field
     attachAutocomplete(document.getElementById('medName0'), 0);
+    updateDurationBehavior(document.querySelector('.medicine-row'));
     
     // Attach autocomplete to problem field
     const problemInput = document.querySelector('input[name="problems"]');
@@ -392,10 +381,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Attach autocomplete to examination field
-    const examinationInput = document.getElementById('examination_0');
+    const examinationInput = document.getElementById('examination_name_0');
     if (examinationInput) {
         examinationInput.addEventListener('input', function() {
-            fetchSuggestions(this.value, 'examination', 'examination_0');
+            fetchSuggestions(this.value, 'examination', 'examination_name_0');
         });
     }
     
@@ -412,47 +401,76 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (lastPrescription) {
         // Pre-fill problems
-        const problems = lastPrescription.problems.map(p => p.description);
-        problems.forEach((problem, index) => {
-            if (index === 0) {
-                document.querySelector('input[name="problems"]').value = problem;
-            } else {
-                addProblemField(problem);
+        const problems = lastPrescription.problems;
+        if (problems && problems.length > 0) {
+            document.querySelector('input[name="problems"]').value = problems[0];
+            for (let i = 1; i < problems.length; i++) {
+                addProblemField(problems[i]);
             }
-        });
+        }
         
         // Pre-fill examinations
-        const exams = lastPrescription.examinations.map(e => e.description);
-        exams.forEach((exam, index) => {
-            if (index === 0) {
-                document.querySelector('input[name="examinations"]').value = exam;
-            } else {
-                addExaminationField(exam);
+        const exams = lastPrescription.examinations;
+        if (exams && exams.length > 0) {
+            document.querySelector('input[name="examination_names"]').value = exams[0].name || '';
+            document.querySelector('input[name="examination_results"]').value = exams[0].result || '';
+            for (let i = 1; i < exams.length; i++) {
+                addExaminationField(exams[i].name || '', exams[i].result || '');
             }
-        });
+        }
         
         // Pre-fill reports
-        lastPrescription.reports.forEach((report, index) => {
-            if (index === 0) {
-                document.querySelector('input[name="report_names"]').value = report.name;
-                document.querySelector('input[name="report_results"]').value = report.result;
-            } else {
-                addReportField(report.name, report.result);
+        const reports = lastPrescription.reports;
+        if (reports && reports.length > 0) {
+            document.querySelector('input[name="report_names"]').value = reports[0].name || '';
+            document.querySelector('input[name="report_results"]').value = reports[0].result || '';
+            for (let i = 1; i < reports.length; i++) {
+                addReportField(reports[i].name || '', reports[i].result || '');
             }
-        });
+        }
         
         // Pre-fill medicines
-        lastPrescription.medicines.forEach((med, index) => {
-            if (index === 0) {
-                document.getElementById('medName0').value = med.name;
-                document.querySelector('input[name="medicine_strengths"]').value = med.strength;
-                document.querySelector('input[name="medicine_frequencies"]').value = med.frequency;
-                document.querySelector('input[name="medicine_remarks"]').value = med.remark;
-                document.querySelector('select[name="medicine_days"]').value = med.days;
-            } else {
-                addMedicineField(med.name, med.strength, med.frequency, med.remark, med.days);
+        const medicines = lastPrescription.medicines;
+        if (medicines && medicines.length > 0) {
+            document.getElementById('medName0').value = medicines[0].name || '';
+            document.querySelector('input[name="medicine_strengths"]').value = medicines[0].strength || '';
+            document.querySelector('input[name="medicine_frequencies"]').value = medicines[0].frequency || '';
+            document.querySelector('input[name="medicine_remarks"]').value = medicines[0].remark || '';
+            
+            // Set duration for first medicine
+            if (medicines[0].days || medicines[0].days === 0) {
+                const days = medicines[0].days;
+                if (days === 0) {
+                    document.querySelector('select[name="medicine_days_unit"]').value = 'colbe';
+                    const numberInput = document.querySelector('input[name="medicine_days_number"]');
+                    numberInput.readOnly = true;
+                    numberInput.value = "0";
+                } else if (days % 365 === 0) {
+                    document.querySelector('input[name="medicine_days_number"]').value = days / 365;
+                    document.querySelector('select[name="medicine_days_unit"]').value = 'bosor';
+                } else if (days % 30 === 0) {
+                    document.querySelector('input[name="medicine_days_number"]').value = days / 30;
+                    document.querySelector('select[name="medicine_days_unit"]').value = 'mash';
+                } else if (days % 7 === 0) {
+                    document.querySelector('input[name="medicine_days_number"]').value = days / 7;
+                    document.querySelector('select[name="medicine_days_unit"]').value = 'soptaho';
+                } else {
+                    document.querySelector('input[name="medicine_days_number"]').value = days;
+                    document.querySelector('select[name="medicine_days_unit"]').value = 'din';
+                }
             }
-        });
+            
+            // Add additional medicine fields
+            for (let i = 1; i < medicines.length; i++) {
+                addMedicineField(
+                    medicines[i].name || '',
+                    medicines[i].strength || '',
+                    medicines[i].frequency || '',
+                    medicines[i].remark || '',
+                    medicines[i].days || 1
+                );
+            }
+        }
     }
 });
 
@@ -484,8 +502,8 @@ function showSuggestions(data, type, targetId) {
     let suggestionsBox;
     const inputElement = type === 'medicine' ? document.getElementById(`medName${targetId}`) : 
                          type === 'problem' ? document.querySelector('input[name="problems"]') :
-                         type === 'report' ? document.getElementById(targetId) :
-                         type === 'examination' ? document.getElementById(targetId) : null;
+                         type === 'report' ? document.getElementById(`report_name_${targetId}`) :
+                         type === 'examination' ? document.getElementById(`examination_name_${targetId}`) : null;
     
     if (!inputElement) {
         console.error(`Input element not found for ${type} with targetId ${targetId}`);
@@ -565,7 +583,6 @@ function addProblemField(value = '') {
     });
 }
 
-// Updated addExaminationField function
 function addExaminationField(name = '', result = '') {
     examinationIdx++;
     const div = document.getElementById("examinations");
@@ -587,7 +604,6 @@ function addExaminationField(name = '', result = '') {
     });
 }
 
-// Updated addReportField function
 function addReportField(name = '', result = '') {
     reportIdx++;
     const div = document.getElementById("reports");
@@ -609,10 +625,51 @@ function addReportField(name = '', result = '') {
     });
 }
 
+function updateDurationBehavior(row) {
+    const numberInput = row.querySelector('input[name="medicine_days_number"]');
+    const unitSelect = row.querySelector('select[name="medicine_days_unit"]');
+    
+    function handleUnitChange() {
+        if (unitSelect.value === "colbe") {
+            numberInput.readOnly = true;
+            numberInput.value = "0";     // submit হবে
+        } else {
+            numberInput.readOnly = false;
+            if (!numberInput.value || numberInput.value === "0") numberInput.value = "1";
+        }
+    }
+    
+    handleUnitChange();
+    unitSelect.addEventListener('change', handleUnitChange);
+}
 
-function addMedicineField(name = '', strength = '', frequency = '', remark = '', days = '') {
+function addMedicineField(name = '', strength = '', frequency = '', remark = '', days = 1, unit = 'din') {
     medIdx++;
     const div = document.getElementById("medicines");
+    
+    // Convert old days format to new number+unit
+    let initialNumber = "1";
+    let initialUnit = 'din';
+    
+    if (days || days === 0) {
+        if (days === 0) {
+            initialUnit = 'colbe';
+            initialNumber = "0";
+        } else if (days % 365 === 0) {
+            initialNumber = (days / 365).toString();
+            initialUnit = 'bosor';
+        } else if (days % 30 === 0) {
+            initialNumber = (days / 30).toString();
+            initialUnit = 'mash';
+        } else if (days % 7 === 0) {
+            initialNumber = (days / 7).toString();
+            initialUnit = 'soptaho';
+        } else {
+            initialNumber = days.toString();
+            initialUnit = 'din';
+        }
+    }
+    
     div.insertAdjacentHTML("beforeend", `
         <div class="medicine-row">
             <div class="relative">
@@ -635,27 +692,28 @@ function addMedicineField(name = '', strength = '', frequency = '', remark = '',
                            placeholder="Remark" value="${remark}" />
                 </div>
                 <div>
-                    <select name="medicine_days" class="form-input">
-                        <option value="">Select Days</option>
-                        <option value="1"  ${days === '1' ? 'selected' : ''}>১ দিন</option>
-                        <option value="2"  ${days === '2' ? 'selected' : ''}>২ দিন</option>
-                        <option value="3"  ${days === '3' ? 'selected' : ''}>৩ দিন</option>
-                        <option value="4"  ${days === '4' ? 'selected' : ''}>৪ দিন</option>
-                        <option value="5"  ${days === '5' ? 'selected' : ''}>৫ দিন</option>
-                        <option value="7"  ${days === '7' ? 'selected' : ''}>১ সপ্তাহ</option>
-                        <option value="10" ${days === '10' ? 'selected' : ''}>১০ দিন</option>
-                        <option value="14" ${days === '14' ? 'selected' : ''}>২ সপ্তাহ</option>
-                        <option value="21" ${days === '21' ? 'selected' : ''}>৩ সপ্তাহ</option>
-                        <option value="30" ${days === '30' ? 'selected' : ''}>১ মাস</option>
-                        <option value="45" ${days === '45' ? 'selected' : ''}>১.৫ মাস</option>
-                        <option value="60" ${days === '60' ? 'selected' : ''}>২ মাস</option>
-                        <option value="90" ${days === '90' ? 'selected' : ''}>৩ মাস</option>
-                    </select>
+                    <div class="duration-container">
+                        <input type="number" name="medicine_days_number" min="0" value="${initialNumber}" 
+                               class="form-input duration-number" placeholder="1" ${initialUnit === 'colbe' ? 'readonly' : ''}>
+                        <select name="medicine_days_unit" class="form-input duration-unit">
+                            <option value="din" ${initialUnit === 'din' ? 'selected' : ''}>দিন</option>
+                            <option value="soptaho" ${initialUnit === 'soptaho' ? 'selected' : ''}>সপ্তাহ</option>
+                            <option value="mash" ${initialUnit === 'mash' ? 'selected' : ''}>মাস</option>
+                            <option value="bosor" ${initialUnit === 'bosor' ? 'selected' : ''}>বছর</option>
+                            <option value="colbe" ${initialUnit === 'colbe' ? 'selected' : ''}>চলবে</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>`
     );
+    
+    // Attach autocomplete to the new medicine field
     attachAutocomplete(document.getElementById(`medName${medIdx}`), medIdx);
+    
+    // Update duration behavior for the new row
+    const newRow = div.lastElementChild;
+    updateDurationBehavior(newRow);
 }
 
 // Close suggestions when clicking outside

@@ -111,13 +111,15 @@
   <h4 class="font-semibold text-gray-700 mb-2">
     <i class="fas fa-pills mr-2 text-green-600"></i> Medicines
   </h4>
+
   <div class="text-gray-600">
     {% if medicines %}
       {% for medicine in medicines %}
         <div class="mb-2 last:mb-0">
           <div class="font-medium">{{ medicine.name }} ({{ medicine.strength }})</div>
+
           <div class="text-sm text-gray-500">
-            {{ medicine.frequency }} for {{ medicine.days }} days
+            {{ medicine.frequency }} • {{ medicine.days|duration_bn }}
             {% if medicine.remark %} • {{ medicine.remark }}{% endif %}
           </div>
         </div>
@@ -127,6 +129,7 @@
     {% endif %}
   </div>
 </div>
+
 
 <!-- Images Section -->
 {% if images %}

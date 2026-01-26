@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 {% load static %}
+{% load custom_filters %}
+
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -455,13 +458,24 @@
         <div class="rx-container">
           <div class="rx-symbol">℞</div>
         </div>
-        
+
         <!-- Medicines Section -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-prescription-bottle-alt"></i> Medicines
           </div>
+
           <table>
+            <thead>
+              <tr>
+                <th>Medicine</th>
+                <th>Strength</th>
+                <th>Frequency</th>
+                <th>Remark</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+
             <tbody>
               {% for medicine in prescription.medicines.all %}
                 <tr>
@@ -469,22 +483,7 @@
                   <td>{{ medicine.strength }}</td>
                   <td>{{ medicine.frequency }}</td>
                   <td>{{ medicine.remark }}</td>
-                  <td>
-                    {% if medicine.days == 1 %}১ দিন
-                    {% elif medicine.days == 2 %}২ দিন
-                    {% elif medicine.days == 3 %}৩ দিন
-                    {% elif medicine.days == 5 %}৫ দিন
-                    {% elif medicine.days == 7 %}১ সপ্তাহ
-                    {% elif medicine.days == 10 %}১০ দিন
-                    {% elif medicine.days == 14 %}২ সপ্তাহ
-                    {% elif medicine.days == 21 %}৩ সপ্তাহ
-                    {% elif medicine.days == 30 %}১ মাস
-                    {% elif medicine.days == 45 %}১.৫ মাস
-                    {% elif medicine.days == 60 %}২ মাস
-                    {% elif medicine.days == 90 %}৩ মাস 
-                    {% else %}{{ medicine.days }} দিন
-                    {% endif %}
-                  </td>
+                  <td>{{ medicine.days|duration_bn }}</td>
                 </tr>
               {% empty %}
                 <tr>
@@ -495,7 +494,7 @@
           </table>
         </div>
       </div>
-    </div>
+
     
     <!-- Doctor Signature -->
     <div class="signature-area">
