@@ -128,46 +128,83 @@ def prescribe_view(request):
                 # Save examinations
                 exam_names = request.POST.getlist('examination_names')
                 exam_results = request.POST.getlist('examination_results')
-                for name, result in zip(exam_names, exam_results):
-                    if name.strip():
+                for i in range(len(exam_names)):
+                    name = exam_names[i].strip() if i < len(exam_names) else ""
+                    if name:
+                        result = exam_results[i].strip() if i < len(exam_results) else ""
                         Examination.objects.create(
                             prescription=prescription,
-                            name=name.strip(),
-                            description=result.strip() if result.strip() else ""
+                            name=name,
+                            description=result if result else ""
                         )
 
                 # Save reports
                 report_names = request.POST.getlist('report_names')
                 report_results = request.POST.getlist('report_results')
-                for name, result in zip(report_names, report_results):
-                    if name.strip():
+                for i in range(len(report_names)):
+                    name = report_names[i].strip() if i < len(report_names) else ""
+                    if name:
+                        result = report_results[i].strip() if i < len(report_results) else ""
                         Report.objects.create(
                             prescription=prescription,
-                            name=name.strip(),
-                            result=result.strip() if result.strip() else ""
+                            name=name,
+                            result=result if result else ""
                         )
 
                 # Save report images
                 for image in request.FILES.getlist('report_images'):
                     ReportImage.objects.create(prescription=prescription, image=image)
 
-                # Save medicines
+                # Get medicine data with new duration fields
                 med_names = request.POST.getlist('medicine_names')
                 strengths = request.POST.getlist('medicine_strengths')
                 frequencies = request.POST.getlist('medicine_frequencies')
                 remarks = request.POST.getlist('medicine_remarks')
-                days = request.POST.getlist('medicine_days')
+                days_numbers = request.POST.getlist('medicine_days_number')
+                days_units = request.POST.getlist('medicine_days_unit')
 
-                for name, strength, freq, remark, day in zip(med_names, strengths, frequencies, remarks, days):
-                    if name.strip():
-                        Medicine.objects.create(
-                            prescription=prescription,
-                            name=name.strip(),
-                            strength=strength.strip(),
-                            frequency=freq.strip(),
-                            remark=remark.strip(),
-                            days=int(day) if day else 0
-                        )
+                def safe_get(lst, i, default=""):
+                    return lst[i] if i < len(lst) else default
+
+                for i in range(len(med_names)):
+                    name = safe_get(med_names, i).strip()
+                    if not name:
+                        continue
+
+                    strength = safe_get(strengths, i).strip()
+                    freq = safe_get(frequencies, i).strip()
+                    remark = safe_get(remarks, i).strip()
+                    number = safe_get(days_numbers, i, "")  # may be missing if disabled
+                    unit = safe_get(days_units, i, "din")
+
+                    # Convert to days
+                    if unit == "colbe":
+                        days = 0
+                    else:
+                        try:
+                            num = int(number) if str(number).strip() else 1
+                        except (ValueError, TypeError):
+                            num = 1
+
+                        if unit == "din":
+                            days = num
+                        elif unit == "soptaho":
+                            days = num * 7
+                        elif unit == "mash":
+                            days = num * 30
+                        elif unit == "bosor":
+                            days = num * 365
+                        else:
+                            days = num
+
+                    Medicine.objects.create(
+                        prescription=prescription,
+                        name=name,
+                        strength=strength,
+                        frequency=freq,
+                        remark=remark,
+                        days=days
+                    )
                 
                 # Determine which button was clicked
                 action = request.POST.get('action', 'save_and_download')
@@ -185,7 +222,6 @@ def prescribe_view(request):
     # For GET request
     form = PatientForm()
     return render(request, 'app/prescribe.html', {'form': form})
-
 
 @login_required
 def prescribe_with_patient(request, patient_id):
@@ -213,46 +249,83 @@ def prescribe_with_patient(request, patient_id):
                 # Save examinations
                 exam_names = request.POST.getlist('examination_names')
                 exam_results = request.POST.getlist('examination_results')
-                for name, result in zip(exam_names, exam_results):
-                    if name.strip():
+                for i in range(len(exam_names)):
+                    name = exam_names[i].strip() if i < len(exam_names) else ""
+                    if name:
+                        result = exam_results[i].strip() if i < len(exam_results) else ""
                         Examination.objects.create(
                             prescription=prescription,
-                            name=name.strip(),
-                            description=result.strip() if result.strip() else ""
+                            name=name,
+                            description=result if result else ""
                         )
 
                 # Save reports
                 report_names = request.POST.getlist('report_names')
                 report_results = request.POST.getlist('report_results')
-                for name, result in zip(report_names, report_results):
-                    if name.strip():
+                for i in range(len(report_names)):
+                    name = report_names[i].strip() if i < len(report_names) else ""
+                    if name:
+                        result = report_results[i].strip() if i < len(report_results) else ""
                         Report.objects.create(
                             prescription=prescription,
-                            name=name.strip(),
-                            result=result.strip() if result.strip() else ""
+                            name=name,
+                            result=result if result else ""
                         )
 
                 # Save report images
                 for image in request.FILES.getlist('report_images'):
                     ReportImage.objects.create(prescription=prescription, image=image)
 
-                # Save medicines
+                # Get medicine data with new duration fields
                 med_names = request.POST.getlist('medicine_names')
                 strengths = request.POST.getlist('medicine_strengths')
                 frequencies = request.POST.getlist('medicine_frequencies')
                 remarks = request.POST.getlist('medicine_remarks')
-                days = request.POST.getlist('medicine_days')
+                days_numbers = request.POST.getlist('medicine_days_number')
+                days_units = request.POST.getlist('medicine_days_unit')
 
-                for name, strength, freq, remark, day in zip(med_names, strengths, frequencies, remarks, days):
-                    if name.strip():
-                        Medicine.objects.create(
-                            prescription=prescription,
-                            name=name.strip(),
-                            strength=strength.strip(),
-                            frequency=freq.strip(),
-                            remark=remark.strip(),
-                            days=int(day) if day else 0
-                        )
+                def safe_get(lst, i, default=""):
+                    return lst[i] if i < len(lst) else default
+
+                for i in range(len(med_names)):
+                    name = safe_get(med_names, i).strip()
+                    if not name:
+                        continue
+
+                    strength = safe_get(strengths, i).strip()
+                    freq = safe_get(frequencies, i).strip()
+                    remark = safe_get(remarks, i).strip()
+                    number = safe_get(days_numbers, i, "")  # may be missing if disabled
+                    unit = safe_get(days_units, i, "din")
+
+                    # Convert to days
+                    if unit == "colbe":
+                        days = 0
+                    else:
+                        try:
+                            num = int(number) if str(number).strip() else 1
+                        except (ValueError, TypeError):
+                            num = 1
+
+                        if unit == "din":
+                            days = num
+                        elif unit == "soptaho":
+                            days = num * 7
+                        elif unit == "mash":
+                            days = num * 30
+                        elif unit == "bosor":
+                            days = num * 365
+                        else:
+                            days = num
+
+                    Medicine.objects.create(
+                        prescription=prescription,
+                        name=name,
+                        strength=strength,
+                        frequency=freq,
+                        remark=remark,
+                        days=days
+                    )
                 
                 # Determine which button was clicked
                 action = request.POST.get('action', 'save_and_download')
@@ -284,7 +357,6 @@ def prescribe_with_patient(request, patient_id):
         'last_prescription': last_prescription
     }
     return render(request, 'app/prescribe.html', context)
-
 
 @login_required
 def prescription_pdf(request, prescription_id):
@@ -342,6 +414,7 @@ def prescription_pdf(request, prescription_id):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
 
 @login_required
 def search_view(request):
