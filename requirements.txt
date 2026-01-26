@@ -3,4 +3,6 @@ Django
 openpyxl
 whitenoise
 weasyprint
+tinyhtml5
 gunicorn
+
