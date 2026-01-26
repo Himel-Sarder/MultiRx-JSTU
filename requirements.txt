@@ -2,7 +2,6 @@ dj_database_url
 Django
 openpyxl
 whitenoise
-weasyprint
-tinyhtml5
+weasyprint==61.2
+tinyhtml5==2.0.0
 gunicorn
-
