@@ -2,7 +2,6 @@ FROM python:3.11
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install WeasyPrint system dependencies
 RUN apt-get update --allow-releaseinfo-change \
  && apt-get install -y --no-install-recommends \
     build-essential \
@@ -11,7 +10,8 @@ RUN apt-get update --allow-releaseinfo-change \
     libpangocairo-1.0-0 \
     libpangoft2-1.0-0 \
     pango1.0-tools \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libgdk-pixbuf2.0-bin \
     libffi-dev \
     libxml2 \
     libxslt1.1 \
