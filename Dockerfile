@@ -1,11 +1,8 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Force IPv4 (many build envs fail on IPv6) + safer apt behavior
-RUN printf 'Acquire::ForceIPv4 "true";\nAcquire::Retries "5";\n' > /etc/apt/apt.conf.d/99force-ipv4
-
-# Install WeasyPrint dependencies
+# Install WeasyPrint system dependencies
 RUN apt-get update --allow-releaseinfo-change \
  && apt-get install -y --no-install-recommends \
     build-essential \
@@ -21,6 +18,8 @@ RUN apt-get update --allow-releaseinfo-change \
     libjpeg-dev \
     zlib1g-dev \
     libssl-dev \
+    libglib2.0-0 \
+    shared-mime-info \
     ca-certificates \
     fonts-dejavu-core \
     fonts-freefont-ttf \
@@ -35,4 +34,4 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput
 
-CMD exec gunicorn multirx.wsgi:application --timeout 120 --bind 0.0.0.0:$PORT
+CMD gunicorn multirx.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
