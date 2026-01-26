@@ -2,8 +2,11 @@ FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install WeasyPrint dependencies (Debian)
-RUN apt-get update -o Acquire::Retries=5 \
+# Force IPv4 (many build envs fail on IPv6) + safer apt behavior
+RUN printf 'Acquire::ForceIPv4 "true";\nAcquire::Retries "5";\n' > /etc/apt/apt.conf.d/99force-ipv4
+
+# Install WeasyPrint dependencies
+RUN apt-get update --allow-releaseinfo-change \
  && apt-get install -y --no-install-recommends \
     build-essential \
     libcairo2 \
