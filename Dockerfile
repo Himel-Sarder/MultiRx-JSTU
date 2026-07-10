@@ -34,4 +34,6 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput
 
-CMD gunicorn multirx.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
+RUN chmod +x entrypoint.sh
+
+CMD ["./entrypoint.sh"]

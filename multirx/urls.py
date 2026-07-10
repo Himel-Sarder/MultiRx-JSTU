@@ -21,6 +21,7 @@ urlpatterns = [
     path('prescribe/', views.prescribe_view, name='prescribe'),  # New prescription
     path('prescribe/<int:patient_id>/', views.prescribe_with_patient, name='prescribe_with_patient'),
     path('prescription/<int:prescription_id>/pdf/', views.prescription_pdf, name='prescription_pdf'),
+    path('prescription/<int:prescription_id>/research-data/', views.research_data_view, name='research_data'),
     
     # Patient URLs
     path('search/', views.search_view, name='search'),
