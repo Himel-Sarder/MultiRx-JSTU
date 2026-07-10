@@ -117,3 +117,197 @@ class Medicine(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.strength} ({self.frequency})"
+
+
+# --- Master medicine catalogue, imported from data/Medicines.csv ---
+# Used to power the "type A, see medicines starting with A" autocomplete
+# in the prescription form's Medicine Name field.
+class MedicineMaster(models.Model):
+    name = models.CharField(max_length=255, unique=True, db_index=True)
+    uses_raw = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+# --- Research / CKD registry data (internal-only, never printed on the PDF) ---
+class ClinicalResearchData(models.Model):
+    """
+    Extended research data collected on a dedicated 'Next' page after the
+    prescription is created. This data is intentionally kept OUT of the
+    prescription PDF template and is only used for internal record keeping
+    and Excel export/filtering (research/registry purposes).
+    """
+
+    EDUCATION_CHOICES = [
+        ('', 'Select'),
+        ('Illiterate', 'Illiterate'),
+        ('Primary', 'Primary'),
+        ('Secondary', 'Secondary'),
+        ('Higher Secondary', 'Higher Secondary'),
+        ('Graduate', 'Graduate'),
+        ('Postgraduate', 'Postgraduate'),
+        ('Other', 'Other'),
+    ]
+    EMPLOYMENT_CHOICES = [
+        ('', 'Select'),
+        ('Employed', 'Employed'),
+        ('Self-Employed', 'Self-Employed'),
+        ('Unemployed', 'Unemployed'),
+        ('Retired', 'Retired'),
+        ('Student', 'Student'),
+        ('Homemaker', 'Homemaker'),
+        ('Other', 'Other'),
+    ]
+    SMOKING_CHOICES = [
+        ('', 'Select'),
+        ('Never', 'Never'),
+        ('Former', 'Former'),
+        ('Current', 'Current'),
+    ]
+    MODALITY_CHOICES = [
+        ('', 'Select'),
+        ('None', 'None / Pre-dialysis'),
+        ('Hemodialysis', 'Hemodialysis (HD)'),
+        ('Peritoneal Dialysis', 'Peritoneal Dialysis (PD)'),
+        ('Transplantation', 'Transplantation'),
+    ]
+    VASCULAR_ACCESS_CHOICES = [
+        ('', 'Select'),
+        ('Fistula', 'Fistula'),
+        ('Graft', 'Graft'),
+        ('Catheter', 'Catheter'),
+        ('N/A', 'N/A'),
+    ]
+
+    prescription = models.OneToOneField(
+        Prescription, on_delete=models.CASCADE, related_name='research_data'
+    )
+
+    # 1. Education / Social
+    education_level = models.CharField(max_length=30, choices=EDUCATION_CHOICES, blank=True)
+    monthly_income = models.CharField(max_length=50, blank=True, help_text="Monthly income")
+    employment_status = models.CharField(max_length=30, choices=EMPLOYMENT_CHOICES, blank=True)
+
+    # 2. Clinical History & Comorbidities
+    diagnosis = models.CharField(
+        max_length=255, blank=True,
+        help_text="Primary renal disease/cause of failure (e.g. ERA-PRD coding)"
+    )
+    comorbid_diabetes = models.BooleanField(default=False)
+    comorbid_hypertension = models.BooleanField(default=False)
+    comorbid_heart_failure = models.BooleanField(default=False)
+    comorbid_ischemic_heart_disease = models.BooleanField(default=False)
+    comorbid_peripheral_artery_disease = models.BooleanField(default=False)
+    comorbid_stroke = models.BooleanField(default=False)
+
+    smoking_status = models.CharField(max_length=20, choices=SMOKING_CHOICES, blank=True)
+    bmi = models.CharField(max_length=20, blank=True)
+    weight = models.CharField(max_length=20, blank=True, help_text="Weight (kg)")
+    height = models.CharField(max_length=20, blank=True, help_text="Height (cm)")
+
+    # 3. Laboratory Values & Kidney Function
+    serum_creatinine = models.CharField(max_length=20, blank=True)
+    cystatin_c = models.CharField(max_length=20, blank=True)
+    egfr = models.CharField(max_length=20, blank=True, verbose_name="eGFR")
+    uacr = models.CharField(max_length=20, blank=True, verbose_name="uACR")
+    protein_levels = models.CharField(max_length=20, blank=True)
+    hemoglobin = models.CharField(max_length=20, blank=True)
+    ferritin = models.CharField(max_length=20, blank=True)
+    calcium = models.CharField(max_length=20, blank=True)
+    phosphorus = models.CharField(max_length=20, blank=True)
+    pth = models.CharField(max_length=20, blank=True, verbose_name="PTH")
+    potassium = models.CharField(max_length=20, blank=True)
+    bicarbonate = models.CharField(max_length=20, blank=True)
+    serum_albumin = models.CharField(max_length=20, blank=True)
+    crp = models.CharField(max_length=20, blank=True, verbose_name="CRP")
+    total_cholesterol = models.CharField(max_length=20, blank=True)
+    hba1c = models.CharField(max_length=20, blank=True, verbose_name="HbA1c")
+
+    # 4. Kidney Replacement Therapy (KRT) Data
+    krt_modality = models.CharField(max_length=30, choices=MODALITY_CHOICES, blank=True)
+    krt_initiation_date = models.DateField(null=True, blank=True)
+    modality_change_dates = models.CharField(max_length=255, blank=True, help_text="Dates of modality changes")
+    transplant_date = models.DateField(null=True, blank=True)
+    dialysis_duration = models.CharField(max_length=50, blank=True, help_text="e.g. 4 hours/session")
+    dialysis_frequency = models.CharField(max_length=50, blank=True, help_text="e.g. 3x/week")
+    vascular_access_type = models.CharField(max_length=20, choices=VASCULAR_ACCESS_CHOICES, blank=True)
+
+    # 5. Medication Data
+    med_esa = models.BooleanField(default=False, verbose_name="ESA (Erythropoietin-stimulating agents)")
+    med_iron = models.BooleanField(default=False, verbose_name="Iron")
+    med_phosphate_binders = models.BooleanField(default=False, verbose_name="Phosphate binders")
+    med_vitamin_d = models.BooleanField(default=False, verbose_name="Vitamin D")
+    med_calcimimetics = models.BooleanField(default=False, verbose_name="Calcimimetics")
+    med_ace_arb = models.BooleanField(default=False, verbose_name="Antihypertensives (ACE inhibitors/ARBs)")
+    med_diuretics = models.BooleanField(default=False, verbose_name="Diuretics")
+    med_statins = models.BooleanField(default=False, verbose_name="Statins")
+    med_immunosuppressives = models.BooleanField(default=False, verbose_name="Immunosuppressives")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def calculate_bmi(self):
+        """
+        Auto-calculate BMI from weight (kg) and height (cm).
+        BMI = weight(kg) / (height(m) ** 2)
+        Returns the value rounded to 1 decimal place, or None if
+        weight/height are missing or not valid numbers.
+        This is a server-side fallback for when the field is auto-filled
+        by JS on the form (research_data.html) but also covers cases
+        where the record is created/edited outside the browser (e.g. admin, shell).
+        """
+        try:
+            weight_kg = float(str(self.weight).strip())
+            height_cm = float(str(self.height).strip())
+            if weight_kg <= 0 or height_cm <= 0:
+                return None
+            height_m = height_cm / 100
+            return round(weight_kg / (height_m ** 2), 1)
+        except (TypeError, ValueError):
+            return None
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate BMI whenever weight/height are present, so the
+        # stored value always stays in sync even if it wasn't computed on
+        # the client side (e.g. JS disabled, admin edits, API usage).
+        computed = self.calculate_bmi()
+        if computed is not None:
+            self.bmi = str(computed)
+        super().save(*args, **kwargs)
+
+    def comorbidities_list(self):
+        mapping = [
+            (self.comorbid_diabetes, "Diabetes"),
+            (self.comorbid_hypertension, "Hypertension"),
+            (self.comorbid_heart_failure, "Heart Failure"),
+            (self.comorbid_ischemic_heart_disease, "Ischemic Heart Disease"),
+            (self.comorbid_peripheral_artery_disease, "Peripheral Artery Disease"),
+            (self.comorbid_stroke, "Stroke"),
+        ]
+        return [label for present, label in mapping if present]
+
+    def kidney_medications_list(self):
+        mapping = [
+            (self.med_esa, "ESA"),
+            (self.med_iron, "Iron"),
+            (self.med_phosphate_binders, "Phosphate binders"),
+            (self.med_vitamin_d, "Vitamin D"),
+            (self.med_calcimimetics, "Calcimimetics"),
+        ]
+        return [label for present, label in mapping if present]
+
+    def cardiovascular_medications_list(self):
+        mapping = [
+            (self.med_ace_arb, "ACE inhibitors/ARBs"),
+            (self.med_diuretics, "Diuretics"),
+            (self.med_statins, "Statins"),
+            (self.med_immunosuppressives, "Immunosuppressives"),
+        ]
+        return [label for present, label in mapping if present]
+
+    def __str__(self):
+        return f"Research Data - Prescription {self.prescription_id}"

@@ -122,10 +122,77 @@
     cursor: pointer;
     font-size: 0.9rem;
     transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
   
   .suggestion-item:hover {
     background-color: #f3f4f6;
+  }
+
+  .suggestion-item .suggestion-main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .suggestion-item .suggestion-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .suggestion-item .suggestion-sub {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .suggestion-badge {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+  }
+
+  .suggestion-badge.history {
+    background-color: #d1fae5;
+    color: #047857;
+  }
+
+  .suggestion-badge.catalog {
+    background-color: #e5e7eb;
+    color: #4b5563;
+  }
+
+  .suggestions-filter {
+    display: flex;
+    gap: 0.35rem;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+  }
+
+  .suggestions-filter button {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+    background-color: white;
+    color: #4b5563;
+    cursor: pointer;
+  }
+
+  .suggestions-filter button.active {
+    background-color: #059669;
+    border-color: #059669;
+    color: white;
   }
   
   .hidden {
@@ -356,6 +423,13 @@
         </svg>
         Save & Generate PDF
       </button>
+
+      <button type="submit" name="action" value="next" class="btn btn-primary" style="background-color:#2563eb;">
+        Next
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" style="margin-right:0;margin-left:0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
     </div>
   </form>
 </div>
@@ -474,9 +548,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Cache of the last medicine suggestions fetched per row, so the
+// All/Mine/Catalogue filter buttons can re-render instantly without
+// re-hitting the server.
+const medicineSuggestionCache = {};
+const medicineFilterState = {};
+
 function attachAutocomplete(inputElement, index) {
     inputElement.addEventListener('input', function() {
         fetchSuggestions(this.value, 'medicine', index);
+    });
+    inputElement.addEventListener('focus', function() {
+        if (this.value.length >= 1) {
+            fetchSuggestions(this.value, 'medicine', index);
+        }
     });
 }
 
@@ -491,11 +576,142 @@ function fetchSuggestions(query, type, targetId) {
     fetch(endpoint)
         .then(response => response.json())
         .then(data => {
+            if (type === 'medicine') {
+                medicineSuggestionCache[targetId] = data;
+            }
             showSuggestions(data, type, targetId);
         })
         .catch(error => {
             console.error('Error fetching suggestions:', error);
         });
+}
+
+// Converts a "days" integer into the {number, unit} pair used by the
+// duration selector. Shared by the initial "last prescription" prefill,
+// the "add medicine" row builder, and the autocomplete auto-fill below.
+function daysToNumberUnit(days) {
+    if (days === null || days === undefined) return null;
+    if (days === 0) return { number: '0', unit: 'colbe' };
+    if (days % 365 === 0) return { number: (days / 365).toString(), unit: 'bosor' };
+    if (days % 30 === 0) return { number: (days / 30).toString(), unit: 'mash' };
+    if (days % 7 === 0) return { number: (days / 7).toString(), unit: 'soptaho' };
+    return { number: days.toString(), unit: 'din' };
+}
+
+// When a medicine is chosen from suggestions, fill in its previously-used
+// strength/frequency/remark/duration too -- but only into fields the
+// doctor hasn't already typed something into, so we never clobber
+// deliberate edits.
+function applyMedicineDetailsToRow(inputElement, item) {
+    const row = inputElement.closest('.medicine-row');
+    if (!row || item.source !== 'history') return;
+
+    const strengthInput = row.querySelector('input[name="medicine_strengths"]');
+    const frequencyInput = row.querySelector('input[name="medicine_frequencies"]');
+    const remarkInput = row.querySelector('input[name="medicine_remarks"]');
+    const numberInput = row.querySelector('input[name="medicine_days_number"]');
+    const unitSelect = row.querySelector('select[name="medicine_days_unit"]');
+
+    if (strengthInput && !strengthInput.value && item.strength) strengthInput.value = item.strength;
+    if (frequencyInput && !frequencyInput.value && item.frequency) frequencyInput.value = item.frequency;
+    if (remarkInput && !remarkInput.value && item.remark) remarkInput.value = item.remark;
+
+    if (numberInput && unitSelect && (item.days || item.days === 0)) {
+        const du = daysToNumberUnit(item.days);
+        if (du) {
+            numberInput.value = du.number;
+            unitSelect.value = du.unit;
+            numberInput.readOnly = (du.unit === 'colbe');
+        }
+    }
+}
+
+function getMedicineFilterBoxId(targetId) {
+    return `suggestions${targetId}`;
+}
+
+function renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data) {
+    const filter = medicineFilterState[targetId] || 'all';
+    const filtered = data.filter(item => {
+        if (filter === 'mine') return item.source === 'history';
+        if (filter === 'catalog') return item.source === 'catalog';
+        return true;
+    });
+
+    const hasHistory = data.some(i => i.source === 'history');
+    const hasCatalog = data.some(i => i.source === 'catalog');
+
+    suggestionsBox.innerHTML = '';
+
+    // Only show the filter bar when there's actually a mix to filter.
+    if (hasHistory && hasCatalog) {
+        const filterBar = document.createElement('div');
+        filterBar.className = 'suggestions-filter';
+        [['all', 'All'], ['mine', 'My Medicines'], ['catalog', 'Catalogue']].forEach(([key, label]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = label;
+            btn.className = key === filter ? 'active' : '';
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                medicineFilterState[targetId] = key;
+                renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data);
+            });
+            filterBar.appendChild(btn);
+        });
+        suggestionsBox.appendChild(filterBar);
+    }
+
+    if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'suggestion-item';
+        empty.textContent = 'No matches in this filter';
+        suggestionsBox.appendChild(empty);
+        suggestionsBox.classList.remove('hidden');
+        return;
+    }
+
+    filtered.forEach(item => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+
+        const main = document.createElement('div');
+        main.className = 'suggestion-main';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'suggestion-name';
+        nameEl.textContent = item.name;
+        main.appendChild(nameEl);
+
+        if (item.source === 'history' && (item.strength || item.frequency)) {
+            const subEl = document.createElement('span');
+            subEl.className = 'suggestion-sub';
+            subEl.textContent = [item.strength, item.frequency].filter(Boolean).join(' · ');
+            main.appendChild(subEl);
+        }
+
+        suggestionItem.appendChild(main);
+
+        const badge = document.createElement('span');
+        if (item.source === 'history') {
+            badge.className = 'suggestion-badge history';
+            badge.textContent = `Used ${item.count}x`;
+        } else {
+            badge.className = 'suggestion-badge catalog';
+            badge.textContent = 'Catalogue';
+        }
+        suggestionItem.appendChild(badge);
+
+        suggestionItem.addEventListener('click', function() {
+            inputElement.value = item.name;
+            applyMedicineDetailsToRow(inputElement, item);
+            suggestionsBox.classList.add('hidden');
+            inputElement.focus();
+        });
+        suggestionsBox.appendChild(suggestionItem);
+    });
+
+    suggestionsBox.classList.remove('hidden');
 }
 
 function showSuggestions(data, type, targetId) {
@@ -511,7 +727,7 @@ function showSuggestions(data, type, targetId) {
     }
 
     if (type === 'medicine') {
-        suggestionsBox = document.getElementById(`suggestions${targetId}`);
+        suggestionsBox = document.getElementById(getMedicineFilterBoxId(targetId));
     } else {
         const boxId = `${type}-suggestions-${targetId}`;
         suggestionsBox = document.getElementById(boxId);
@@ -526,17 +742,26 @@ function showSuggestions(data, type, targetId) {
     
     if (!suggestionsBox) return;
     
-    suggestionsBox.innerHTML = '';
-    
     if (data.length === 0) {
+        suggestionsBox.innerHTML = '';
         suggestionsBox.classList.add('hidden');
         return;
     }
-    
+
+    if (type === 'medicine') {
+        renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data);
+        return;
+    }
+
+    suggestionsBox.innerHTML = '';
+
     data.forEach(item => {
         const suggestionItem = document.createElement('div');
         suggestionItem.className = 'suggestion-item';
-        suggestionItem.textContent = `${item.name} (${item.count})`;
+        // Problem/report/examination suggestions carry a usage "count".
+        suggestionItem.textContent = (item.count !== undefined && item.count !== null)
+            ? `${item.name} (${item.count})`
+            : item.name;
         suggestionItem.addEventListener('click', function() {
             inputElement.value = item.name;
             suggestionsBox.classList.add('hidden');

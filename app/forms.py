@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import Doctor
 from .models import Patient
+from .models import ClinicalResearchData
 
 
 
@@ -143,3 +144,87 @@ class ProfilePictureForm(forms.ModelForm):
                 raise forms.ValidationError("Only JPEG, PNG or GIF images are allowed")
         
         return picture
+
+
+TEXT_ATTRS = {'class': 'form-input'}
+DATE_ATTRS = {'class': 'form-input', 'type': 'date'}
+SELECT_ATTRS = {'class': 'form-input'}
+CHECK_ATTRS = {'class': 'research-checkbox'}
+
+
+class ClinicalResearchDataForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalResearchData
+        exclude = ['prescription', 'created_at', 'updated_at']
+        widgets = {
+            'education_level': forms.Select(attrs=SELECT_ATTRS),
+            'monthly_income': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'e.g. 15,000 BDT'}),
+            'employment_status': forms.Select(attrs=SELECT_ATTRS),
+
+            'diagnosis': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Primary renal disease / cause of failure (ERA-PRD coding)'}),
+            'comorbid_diabetes': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'comorbid_hypertension': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'comorbid_heart_failure': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'comorbid_ischemic_heart_disease': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'comorbid_peripheral_artery_disease': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'comorbid_stroke': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'smoking_status': forms.Select(attrs=SELECT_ATTRS),
+            # BMI is auto-calculated (client-side JS in research_data.html, with a
+            # server-side fallback in ClinicalResearchData.save()) from weight & height,
+            # so the field is read-only and just displays the computed value.
+            'bmi': forms.TextInput(attrs={
+                **TEXT_ATTRS,
+                'placeholder': 'Auto-calculated from weight & height',
+                'readonly': 'readonly',
+                'id': 'id_bmi',
+            }),
+            'weight': forms.NumberInput(attrs={
+                **TEXT_ATTRS,
+                'placeholder': 'Weight (kg)',
+                'id': 'id_weight',
+                'step': '0.1',
+                'min': '0',
+            }),
+            'height': forms.NumberInput(attrs={
+                **TEXT_ATTRS,
+                'placeholder': 'Height (cm)',
+                'id': 'id_height',
+                'step': '0.1',
+                'min': '0',
+            }),
+
+            'serum_creatinine': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Serum creatinine'}),
+            'cystatin_c': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Cystatin C'}),
+            'egfr': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'eGFR'}),
+            'uacr': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'uACR'}),
+            'protein_levels': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Protein levels'}),
+            'hemoglobin': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Hemoglobin'}),
+            'ferritin': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Ferritin'}),
+            'calcium': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Calcium'}),
+            'phosphorus': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Phosphorus'}),
+            'pth': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'PTH'}),
+            'potassium': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Potassium'}),
+            'bicarbonate': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Bicarbonate'}),
+            'serum_albumin': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Serum albumin'}),
+            'crp': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'CRP'}),
+            'total_cholesterol': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Total cholesterol'}),
+            'hba1c': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'HbA1c'}),
+
+            'krt_modality': forms.Select(attrs=SELECT_ATTRS),
+            'krt_initiation_date': forms.DateInput(attrs=DATE_ATTRS),
+            'modality_change_dates': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'Dates of modality changes'}),
+            'transplant_date': forms.DateInput(attrs=DATE_ATTRS),
+            'dialysis_duration': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'e.g. 4 hours/session'}),
+            'dialysis_frequency': forms.TextInput(attrs={**TEXT_ATTRS, 'placeholder': 'e.g. 3x/week'}),
+            'vascular_access_type': forms.Select(attrs=SELECT_ATTRS),
+
+            'med_esa': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_iron': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_phosphate_binders': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_vitamin_d': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_calcimimetics': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_ace_arb': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_diuretics': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_statins': forms.CheckboxInput(attrs=CHECK_ATTRS),
+            'med_immunosuppressives': forms.CheckboxInput(attrs=CHECK_ATTRS),
+        }

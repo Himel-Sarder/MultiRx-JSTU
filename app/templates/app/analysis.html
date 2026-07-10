@@ -33,7 +33,8 @@
   
   /* Chart containers */
   #gender-chart, #address-pie, #medicine-chart, 
-  #problem-bar, #age-bar, #monthly-line {
+  #problem-bar, #age-bar, #monthly-line,
+  #comorbidity-bar, #smoking-pie, #krt-pie, #employment-bar {
     height: 100%;
     width: 100%;
   }
@@ -167,6 +168,66 @@
         </div>
         <div class="chart-body">
           <div id="monthly-line"></div>
+        </div>
+      </div>
+
+      <!-- Comorbidity Prevalence -->
+      <div class="chart-card lg:col-span-2">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            Comorbidity Prevalence
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="comorbidity-bar"></div>
+        </div>
+      </div>
+
+      <!-- Smoking Status -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-slate-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.25 6.75L22.5 12l-5.25 5.25M12 3v18M2 12h9" />
+            </svg>
+            Smoking Status
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="smoking-pie"></div>
+        </div>
+      </div>
+
+      <!-- KRT Modality -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            KRT Modality
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="krt-pie"></div>
+        </div>
+      </div>
+
+      <!-- Employment Status -->
+      <div class="chart-card lg:col-span-2">
+        <div class="chart-header">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 text-amber-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+            Employment Status
+          </h3>
+        </div>
+        <div class="chart-body">
+          <div id="employment-bar"></div>
         </div>
       </div>
     </div>
@@ -349,6 +410,99 @@
     },
     yaxis: { 
       title: 'Prescription Count',
+      gridcolor: '#e2e8f0'
+    }
+  });
+
+  // Comorbidity Prevalence Bar Chart
+  Plotly.newPlot('comorbidity-bar', [{
+    x: {{ comorbidity_labels|safe }},
+    y: {{ comorbidity_counts|safe }},
+    type: 'bar',
+    marker: {
+      color: 'rgb(249, 115, 22)',
+      line: {
+        color: 'rgb(154, 52, 18)',
+        width: 1.5
+      }
+    },
+    text: {{ comorbidity_counts|safe }},
+    textposition: 'auto'
+  }], {
+    margin: { t: 30, b: 80, l: 50, r: 30 },
+    height: 350,
+    xaxis: {
+      title: 'Comorbidity',
+      tickangle: -30
+    },
+    yaxis: {
+      title: 'Patient Count',
+      gridcolor: '#e2e8f0'
+    }
+  });
+
+  // Smoking Status Pie Chart
+  Plotly.newPlot('smoking-pie', [{
+    values: {{ smoking_values|safe }},
+    labels: {{ smoking_labels|safe }},
+    type: 'pie',
+    textinfo: 'label+percent',
+    insidetextorientation: 'radial',
+    marker: {
+      colors: ['#64748b', '#f59e0b', '#ef4444', '#94a3b8']
+    },
+    hoverinfo: 'label+percent+value',
+    textfont: {
+      size: 14
+    },
+    hole: 0.3
+  }], {
+    margin: { t: 0, b: 0, l: 0, r: 0 },
+    height: 350
+  });
+
+  // KRT Modality Pie Chart
+  Plotly.newPlot('krt-pie', [{
+    values: {{ krt_values|safe }},
+    labels: {{ krt_labels|safe }},
+    type: 'pie',
+    textinfo: 'label+percent',
+    insidetextorientation: 'radial',
+    marker: {
+      colors: ['#6366f1', '#0ea5e9', '#22c55e', '#a855f7', '#94a3b8']
+    },
+    hoverinfo: 'label+percent+value',
+    textfont: {
+      size: 14
+    },
+    hole: 0.3
+  }], {
+    margin: { t: 0, b: 0, l: 0, r: 0 },
+    height: 350
+  });
+
+  // Employment Status Bar Chart
+  Plotly.newPlot('employment-bar', [{
+    x: {{ employment_labels|safe }},
+    y: {{ employment_counts|safe }},
+    type: 'bar',
+    marker: {
+      color: 'rgb(245, 158, 11)',
+      line: {
+        color: 'rgb(146, 64, 14)',
+        width: 1.5
+      }
+    },
+    text: {{ employment_counts|safe }},
+    textposition: 'auto'
+  }], {
+    margin: { t: 30, b: 60, l: 50, r: 30 },
+    height: 350,
+    xaxis: {
+      title: 'Employment Status'
+    },
+    yaxis: {
+      title: 'Patient Count',
       gridcolor: '#e2e8f0'
     }
   });

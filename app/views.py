@@ -6,7 +6,7 @@ from .models import *
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import CSS, HTML
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Max
 from django.db.models.functions import TruncMonth, ExtractYear, ExtractMonth, TruncDay
 import openpyxl
 import json
@@ -211,6 +211,8 @@ def prescribe_view(request):
                 
                 if action == 'save_and_download':
                     return redirect('prescription_pdf', prescription_id=prescription.id)
+                elif action == 'next':
+                    return redirect('research_data', prescription_id=prescription.id)
                 else:  # 'save'
                     messages.success(request, "Prescription saved successfully!")
                     return redirect('patient_profile', patient_id=patient.id)
@@ -332,6 +334,8 @@ def prescribe_with_patient(request, patient_id):
                 
                 if action == 'save_and_download':
                     return redirect('prescription_pdf', prescription_id=prescription.id)
+                elif action == 'next':
+                    return redirect('research_data', prescription_id=prescription.id)
                 else:  # 'save'
                     messages.success(request, "Prescription saved successfully!")
                     return redirect('patient_profile', patient_id=patient.id)
@@ -416,62 +420,177 @@ def prescription_pdf(request, prescription_id):
     return response
 
 
+from .models import ClinicalResearchData
+from .forms import ClinicalResearchDataForm
+
+@login_required
+def research_data_view(request, prescription_id):
+    prescription = get_object_or_404(
+        Prescription.objects.select_related('patient'),
+        id=prescription_id,
+        patient__doctor=request.user
+    )
+    instance = getattr(prescription, 'research_data', None)
+
+    if request.method == 'POST':
+        form = ClinicalResearchDataForm(request.POST, instance=instance)
+        if form.is_valid():
+            research_data = form.save(commit=False)
+            research_data.prescription = prescription
+            research_data.save()
+
+            action = request.POST.get('action', 'save')
+            messages.success(request, "Additional patient record saved successfully!")
+            if action == 'save_and_download':
+                return redirect('prescription_pdf', prescription_id=prescription.id)
+            return redirect('patient_profile', patient_id=prescription.patient.id)
+    else:
+        form = ClinicalResearchDataForm(instance=instance)
+
+    return render(request, 'app/research_data.html', {
+        'form': form,
+        'prescription': prescription,
+        'patient': prescription.patient,
+    })
+
+
+RESEARCH_COMORBID_FIELDS = {
+    'diabetes': 'prescriptions__research_data__comorbid_diabetes',
+    'hypertension': 'prescriptions__research_data__comorbid_hypertension',
+    'heart_failure': 'prescriptions__research_data__comorbid_heart_failure',
+    'ischemic_heart_disease': 'prescriptions__research_data__comorbid_ischemic_heart_disease',
+    'peripheral_artery_disease': 'prescriptions__research_data__comorbid_peripheral_artery_disease',
+    'stroke': 'prescriptions__research_data__comorbid_stroke',
+}
+
+RESEARCH_MEDICATION_FIELDS = {
+    'med_esa': 'prescriptions__research_data__med_esa',
+    'med_iron': 'prescriptions__research_data__med_iron',
+    'med_phosphate_binders': 'prescriptions__research_data__med_phosphate_binders',
+    'med_vitamin_d': 'prescriptions__research_data__med_vitamin_d',
+    'med_calcimimetics': 'prescriptions__research_data__med_calcimimetics',
+    'med_ace_arb': 'prescriptions__research_data__med_ace_arb',
+    'med_diuretics': 'prescriptions__research_data__med_diuretics',
+    'med_statins': 'prescriptions__research_data__med_statins',
+    'med_immunosuppressives': 'prescriptions__research_data__med_immunosuppressives',
+}
+
+
+def apply_research_filters(patient_qs, request):
+    """Apply optional patient/demographic + Education/Clinical/KRT/Medication
+    filters (from GET params) to a Patient queryset."""
+
+    # --- Demographics (on the Patient model itself) --------------------------
+    gender = request.GET.get('gender', '').strip()
+    if gender:
+        patient_qs = patient_qs.filter(gender=gender)
+
+    age_min = request.GET.get('age_min', '').strip()
+    if age_min.isdigit():
+        patient_qs = patient_qs.filter(age__gte=int(age_min))
+
+    age_max = request.GET.get('age_max', '').strip()
+    if age_max.isdigit():
+        patient_qs = patient_qs.filter(age__lte=int(age_max))
+
+    registered_from = request.GET.get('registered_from', '').strip()
+    if registered_from:
+        patient_qs = patient_qs.filter(created_at__date__gte=registered_from)
+
+    registered_to = request.GET.get('registered_to', '').strip()
+    if registered_to:
+        patient_qs = patient_qs.filter(created_at__date__lte=registered_to)
+
+    # --- Education / Social ---------------------------------------------------
+    education_level = request.GET.get('education_level', '').strip()
+    if education_level:
+        patient_qs = patient_qs.filter(prescriptions__research_data__education_level=education_level)
+
+    employment_status = request.GET.get('employment_status', '').strip()
+    if employment_status:
+        patient_qs = patient_qs.filter(prescriptions__research_data__employment_status=employment_status)
+
+    smoking_status = request.GET.get('smoking_status', '').strip()
+    if smoking_status:
+        patient_qs = patient_qs.filter(prescriptions__research_data__smoking_status=smoking_status)
+
+    # --- Clinical history -------------------------------------------------------
+    diagnosis = request.GET.get('diagnosis', '').strip()
+    if diagnosis:
+        patient_qs = patient_qs.filter(prescriptions__research_data__diagnosis__icontains=diagnosis)
+
+    for param, field_lookup in RESEARCH_COMORBID_FIELDS.items():
+        if request.GET.get(param) == '1':
+            patient_qs = patient_qs.filter(**{field_lookup: True})
+
+    # --- KRT ---------------------------------------------------------------
+    krt_modality = request.GET.get('krt_modality', '').strip()
+    if krt_modality:
+        patient_qs = patient_qs.filter(prescriptions__research_data__krt_modality=krt_modality)
+
+    vascular_access_type = request.GET.get('vascular_access_type', '').strip()
+    if vascular_access_type:
+        patient_qs = patient_qs.filter(prescriptions__research_data__vascular_access_type=vascular_access_type)
+
+    krt_initiation_from = request.GET.get('krt_initiation_from', '').strip()
+    if krt_initiation_from:
+        patient_qs = patient_qs.filter(prescriptions__research_data__krt_initiation_date__gte=krt_initiation_from)
+
+    krt_initiation_to = request.GET.get('krt_initiation_to', '').strip()
+    if krt_initiation_to:
+        patient_qs = patient_qs.filter(prescriptions__research_data__krt_initiation_date__lte=krt_initiation_to)
+
+    # --- Medication data ---------------------------------------------------
+    for param, field_lookup in RESEARCH_MEDICATION_FIELDS.items():
+        if request.GET.get(param) == '1':
+            patient_qs = patient_qs.filter(**{field_lookup: True})
+
+    return patient_qs.distinct()
+
+
 @login_required
 def search_view(request):
     query = request.GET.get('q', '').strip()
     patient_qs = Patient.objects.filter(doctor=request.user).order_by('-created_at')
+    exact_id_match = False
 
     if query:
-        # Check for custom ID formats in search
-        if query.startswith('P') or query.startswith('Pres'):
+        # Check for custom ID formats in search (e.g. "P12", "Pres34").
+        if query.startswith('Pres'):
             try:
-                if query.startswith('Pres'):
-                    num = int(query[4:])
-                    # Search only by prescription ID
-                    patient_qs = patient_qs.filter(prescriptions__id=num)
-                    # Return early if we found an exact match
-                    if patient_qs.exists():
-                        paginator = Paginator(patient_qs, 5)
-                        page_obj = paginator.get_page(1)
-                        context = {
-                            "results": page_obj,
-                            "page_obj": page_obj,
-                            "total_count": Patient.objects.filter(doctor=request.user).count(),
-                            "search_count": paginator.count,
-                            "query": query,
-                        }
-                        return render(request, "app/search.html", context)
-                else:
-                    num = int(query[1:])
-                    # Search only by patient ID
-                    patient_qs = patient_qs.filter(id=num)
-                    # Return early if we found an exact match
-                    if patient_qs.exists():
-                        paginator = Paginator(patient_qs, 5)
-                        page_obj = paginator.get_page(1)
-                        context = {
-                            "results": page_obj,
-                            "page_obj": page_obj,
-                            "total_count": Patient.objects.filter(doctor=request.user).count(),
-                            "search_count": paginator.count,
-                            "query": query,
-                        }
-                        return render(request, "app/search.html", context)
+                num = int(query[4:])
+                candidate = patient_qs.filter(prescriptions__id=num)
+                if candidate.exists():
+                    patient_qs = candidate
+                    exact_id_match = True
             except (ValueError, IndexError):
-                # If conversion fails, continue with regular search
                 pass
-        
-        # Regular search (only reached if no exact ID match was found)
-        patient_qs = patient_qs.filter(
-            Q(name__icontains=query) |
-            Q(age__icontains=query) |
-            Q(address__icontains=query) |
-            Q(prescriptions__problems__description__icontains=query) |
-            Q(prescriptions__examinations__description__icontains=query) |
-            Q(prescriptions__reports__name__icontains=query) |
-            Q(prescriptions__reports__result__icontains=query) |
-            Q(prescriptions__medicines__name__icontains=query)
-        ).distinct()
+        elif query.startswith('P'):
+            try:
+                num = int(query[1:])
+                candidate = patient_qs.filter(id=num)
+                if candidate.exists():
+                    patient_qs = candidate
+                    exact_id_match = True
+            except (ValueError, IndexError):
+                pass
+
+        if not exact_id_match:
+            # Regular text search across name/age/address and prescription data.
+            patient_qs = patient_qs.filter(
+                Q(name__icontains=query) |
+                Q(age__icontains=query) |
+                Q(address__icontains=query) |
+                Q(prescriptions__problems__description__icontains=query) |
+                Q(prescriptions__examinations__description__icontains=query) |
+                Q(prescriptions__reports__name__icontains=query) |
+                Q(prescriptions__reports__result__icontains=query) |
+                Q(prescriptions__medicines__name__icontains=query)
+            ).distinct()
+
+    # Advanced filters always apply, even on an exact ID match, so the two
+    # can be combined (e.g. "P12" + "Diabetes only").
+    patient_qs = apply_research_filters(patient_qs, request)
 
     paginator = Paginator(patient_qs, 5)
     page_number = request.GET.get("page")
@@ -483,6 +602,13 @@ def search_view(request):
         "total_count": Patient.objects.filter(doctor=request.user).count(),
         "search_count": paginator.count,
         "query": query,
+        "gender_choices": Patient._meta.get_field('gender').choices,
+        "education_choices": ClinicalResearchData.EDUCATION_CHOICES,
+        "employment_choices": ClinicalResearchData.EMPLOYMENT_CHOICES,
+        "smoking_choices": ClinicalResearchData.SMOKING_CHOICES,
+        "modality_choices": ClinicalResearchData.MODALITY_CHOICES,
+        "vascular_access_choices": ClinicalResearchData.VASCULAR_ACCESS_CHOICES,
+        "selected_filters": request.GET,
     }
     return render(request, "app/search.html", context)
 
@@ -506,6 +632,7 @@ def export_excel(request):
                 
                 # If we found exact ID matches, use those results
                 if patients.exists():
+                    patients = apply_research_filters(patients, request)
                     return _generate_excel(patients, query)
             except (ValueError, IndexError):
                 # If ID conversion fails, continue with regular search
@@ -523,6 +650,7 @@ def export_excel(request):
             Q(prescriptions__medicines__name__icontains=query)
         ).distinct()
 
+    patients = apply_research_filters(patients, request)
     return _generate_excel(patients, query)
 
 def _generate_excel(patients, query=None):
@@ -534,12 +662,21 @@ def _generate_excel(patients, query=None):
     # Column headers with formatted IDs
     headers = [
         'Patient ID', 'Name', 'Age', 'Gender', 'Address', 'Created Date',
-        'Prescription IDs', 'Problems', 'Examinations', 'Reports', 'Medicines'
+        'Prescription IDs', 'Problems', 'Examinations', 'Reports', 'Medicines',
+        # Research / registry columns (never shown on the PDF)
+        'Education Level', 'Monthly Income', 'Employment Status',
+        'Diagnosis', 'Comorbidities', 'Smoking Status', 'BMI', 'Weight (kg)', 'Height (cm)',
+        'Serum Creatinine', 'Cystatin C', 'eGFR', 'uACR', 'Protein Levels',
+        'Hemoglobin', 'Ferritin', 'Calcium', 'Phosphorus', 'PTH', 'Potassium',
+        'Bicarbonate', 'Serum Albumin', 'CRP', 'Total Cholesterol', 'HbA1c',
+        'KRT Modality', 'KRT Initiation Date', 'Modality Change Dates', 'Transplant Date',
+        'Dialysis Duration', 'Dialysis Frequency', 'Vascular Access Type',
+        'Kidney Medications', 'Cardiovascular/Other Medications',
     ]
     ws.append(headers)
 
     # Set column widths
-    column_widths = [15, 25, 10, 10, 30, 15, 20, 40, 40, 40, 40]
+    column_widths = [15, 25, 10, 10, 30, 15, 20, 40, 40, 40, 40] + [20] * (len(headers) - 11)
     for i, width in enumerate(column_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
 
@@ -552,6 +689,17 @@ def _generate_excel(patients, query=None):
         reports = []
         medicines = []
         pres_ids = []
+
+        # Research/registry data (aggregated across all of the patient's prescriptions)
+        education_levels, incomes, employment_statuses = [], [], []
+        diagnoses, comorbidities, smoking_statuses = [], [], []
+        bmis, weights, heights = [], [], []
+        creatinines, cystatins, egfrs, uacrs, proteins = [], [], [], [], []
+        hemoglobins, ferritins, calciums, phosphoruses, pths = [], [], [], [], []
+        potassiums, bicarbonates, albumins, crps, cholesterols, hba1cs = [], [], [], [], [], []
+        modalities, krt_dates, modality_changes, transplant_dates = [], [], [], []
+        dialysis_durations, dialysis_frequencies, vascular_accesses = [], [], []
+        kidney_meds, cardio_meds = [], []
         
         for pres in prescriptions:
             pres_ids.append(f"Pres{pres.id}")
@@ -562,6 +710,43 @@ def _generate_excel(patients, query=None):
                 f"{m.name} ({m.strength}) - {m.frequency}" 
                 for m in pres.medicines.all()
             )
+
+            rd = getattr(pres, 'research_data', None)
+            if rd:
+                if rd.education_level: education_levels.append(rd.education_level)
+                if rd.monthly_income: incomes.append(rd.monthly_income)
+                if rd.employment_status: employment_statuses.append(rd.employment_status)
+                if rd.diagnosis: diagnoses.append(rd.diagnosis)
+                comorbidities.extend(rd.comorbidities_list())
+                if rd.smoking_status: smoking_statuses.append(rd.smoking_status)
+                if rd.bmi: bmis.append(rd.bmi)
+                if rd.weight: weights.append(rd.weight)
+                if rd.height: heights.append(rd.height)
+                if rd.serum_creatinine: creatinines.append(rd.serum_creatinine)
+                if rd.cystatin_c: cystatins.append(rd.cystatin_c)
+                if rd.egfr: egfrs.append(rd.egfr)
+                if rd.uacr: uacrs.append(rd.uacr)
+                if rd.protein_levels: proteins.append(rd.protein_levels)
+                if rd.hemoglobin: hemoglobins.append(rd.hemoglobin)
+                if rd.ferritin: ferritins.append(rd.ferritin)
+                if rd.calcium: calciums.append(rd.calcium)
+                if rd.phosphorus: phosphoruses.append(rd.phosphorus)
+                if rd.pth: pths.append(rd.pth)
+                if rd.potassium: potassiums.append(rd.potassium)
+                if rd.bicarbonate: bicarbonates.append(rd.bicarbonate)
+                if rd.serum_albumin: albumins.append(rd.serum_albumin)
+                if rd.crp: crps.append(rd.crp)
+                if rd.total_cholesterol: cholesterols.append(rd.total_cholesterol)
+                if rd.hba1c: hba1cs.append(rd.hba1c)
+                if rd.krt_modality: modalities.append(rd.krt_modality)
+                if rd.krt_initiation_date: krt_dates.append(rd.krt_initiation_date.strftime('%Y-%m-%d'))
+                if rd.modality_change_dates: modality_changes.append(rd.modality_change_dates)
+                if rd.transplant_date: transplant_dates.append(rd.transplant_date.strftime('%Y-%m-%d'))
+                if rd.dialysis_duration: dialysis_durations.append(rd.dialysis_duration)
+                if rd.dialysis_frequency: dialysis_frequencies.append(rd.dialysis_frequency)
+                if rd.vascular_access_type: vascular_accesses.append(rd.vascular_access_type)
+                kidney_meds.extend(rd.kidney_medications_list())
+                cardio_meds.extend(rd.cardiovascular_medications_list())
 
         # Add formatted data to worksheet
         ws.append([
@@ -575,8 +760,47 @@ def _generate_excel(patients, query=None):
             "\n".join(problems),
             "\n".join(examinations),
             "\n".join(reports),
-            "\n".join(medicines)
+            "\n".join(medicines),
+            # Research / registry columns
+            ", ".join(education_levels),
+            ", ".join(incomes),
+            ", ".join(employment_statuses),
+            "\n".join(diagnoses),
+            ", ".join(sorted(set(comorbidities))),
+            ", ".join(smoking_statuses),
+            ", ".join(bmis),
+            ", ".join(weights),
+            ", ".join(heights),
+            ", ".join(creatinines),
+            ", ".join(cystatins),
+            ", ".join(egfrs),
+            ", ".join(uacrs),
+            ", ".join(proteins),
+            ", ".join(hemoglobins),
+            ", ".join(ferritins),
+            ", ".join(calciums),
+            ", ".join(phosphoruses),
+            ", ".join(pths),
+            ", ".join(potassiums),
+            ", ".join(bicarbonates),
+            ", ".join(albumins),
+            ", ".join(crps),
+            ", ".join(cholesterols),
+            ", ".join(hba1cs),
+            ", ".join(modalities),
+            ", ".join(krt_dates),
+            ", ".join(modality_changes),
+            ", ".join(transplant_dates),
+            ", ".join(dialysis_durations),
+            ", ".join(dialysis_frequencies),
+            ", ".join(vascular_accesses),
+            ", ".join(sorted(set(kidney_meds))),
+            ", ".join(sorted(set(cardio_meds))),
         ])
+
+    # Enable Excel's native column filtering (AutoFilter) across the whole header/data range
+    ws.auto_filter.ref = ws.dimensions
+    ws.freeze_panes = "A2"
 
     # Create filename
     filename = "patients_export.xlsx"
@@ -664,6 +888,46 @@ def analysis_view(request):
         monthly_labels = [month_name[m["m"]][:3] for m in month_data] or ["Jan"]
         monthly_counts = [m["count"] for m in month_data] or [0]
 
+    # Clinical research data scoped to the same filtered patients
+    rd_qs = ClinicalResearchData.objects.filter(prescription__patient__in=qs)
+
+    # Comorbidity prevalence with fallback
+    comorbidity_fields = [
+        ("comorbid_diabetes", "Diabetes"),
+        ("comorbid_hypertension", "Hypertension"),
+        ("comorbid_heart_failure", "Heart Failure"),
+        ("comorbid_ischemic_heart_disease", "Ischemic Heart Disease"),
+        ("comorbid_peripheral_artery_disease", "Peripheral Artery Disease"),
+        ("comorbid_stroke", "Stroke"),
+    ]
+    comorbidity_counts_raw = rd_qs.aggregate(
+        **{field: Count("id", filter=Q(**{field: True})) for field, _ in comorbidity_fields}
+    )
+    comorbidity_pairs = [
+        (label, comorbidity_counts_raw.get(field, 0) or 0) for field, label in comorbidity_fields
+    ]
+    comorbidity_pairs = [p for p in comorbidity_pairs if p[1] > 0] or [("No Data", 1)]
+    comorbidity_labels = [p[0] for p in comorbidity_pairs]
+    comorbidity_counts = [p[1] for p in comorbidity_pairs]
+
+    # Smoking status distribution with fallback
+    smoking_data = rd_qs.exclude(smoking_status="").values("smoking_status").annotate(count=Count("id"))
+    smoking_labels = [s["smoking_status"] for s in smoking_data] or ["No Data"]
+    smoking_values = [s["count"] for s in smoking_data] or [1]
+
+    # KRT modality distribution with fallback
+    krt_data = rd_qs.exclude(krt_modality="").values("krt_modality").annotate(count=Count("id"))
+    krt_labels = [k["krt_modality"] for k in krt_data] or ["No Data"]
+    krt_values = [k["count"] for k in krt_data] or [1]
+
+    # Employment status distribution with fallback
+    employment_data = (rd_qs.exclude(employment_status="")
+                        .values("employment_status")
+                        .annotate(count=Count("id"))
+                        .order_by("-count"))
+    employment_labels = [e["employment_status"] for e in employment_data] or ["No Data"]
+    employment_counts = [e["count"] for e in employment_data] or [1]
+
     # Available years and months
     available_years = (Patient.objects.filter(doctor=request.user)
                        .annotate(y=ExtractYear("created_at"))
@@ -700,6 +964,14 @@ def analysis_view(request):
         "monthly_counts": json.dumps(monthly_counts),
         "address_labels": json.dumps(address_labels),
         "address_counts": json.dumps(address_counts),
+        "comorbidity_labels": json.dumps(comorbidity_labels),
+        "comorbidity_counts": json.dumps(comorbidity_counts),
+        "smoking_labels": json.dumps(smoking_labels),
+        "smoking_values": json.dumps(smoking_values),
+        "krt_labels": json.dumps(krt_labels),
+        "krt_values": json.dumps(krt_values),
+        "employment_labels": json.dumps(employment_labels),
+        "employment_counts": json.dumps(employment_counts),
         
         # Filter options
         "available_years": available_years,
@@ -725,19 +997,6 @@ def delete_patient(request, patient_id):
         return redirect('search')
     return render(request, 'app/confirm_delete.html', {'patient': patient})
 
-@require_GET
-@login_required
-def medicine_autocomplete(request):
-    q = request.GET.get('q', '').strip()
-    meds = (Medicine.objects
-            .filter(prescription__patient__doctor=request.user, name__icontains=q)
-            .values('name')
-            .annotate(total=Count('id'))
-            .order_by('-total')[:10])
-
-    data = [{'name': m['name'], 'count': m['total']} for m in meds]
-    return JsonResponse(data, safe=False)
-
 @login_required
 def patient_profile_view(request, patient_id):
     patient = get_object_or_404(
@@ -746,7 +1005,8 @@ def patient_profile_view(request, patient_id):
             'prescriptions__examinations',
             'prescriptions__reports',
             'prescriptions__medicines',
-            'prescriptions__images'
+            'prescriptions__images',
+            'prescriptions__research_data',
         ),
         id=patient_id,
         doctor=request.user
@@ -767,6 +1027,7 @@ def patient_profile_view(request, patient_id):
             'reports': prescription.reports.all(),
             'medicines': prescription.medicines.all(),
             'images': prescription.images.all(),
+            'research_data': getattr(prescription, 'research_data', None),
         })
     
     # Collect all related data from all prescriptions
@@ -775,6 +1036,7 @@ def patient_profile_view(request, patient_id):
     all_reports = []
     all_medicines = []
     all_images = []
+    all_research_data = []
     
     for prescription in prescriptions:
         all_problems.extend(prescription.problems.all())
@@ -782,7 +1044,14 @@ def patient_profile_view(request, patient_id):
         all_reports.extend(prescription.reports.all())
         all_medicines.extend(prescription.medicines.all())
         all_images.extend(prescription.images.all())
-    
+        research_data = getattr(prescription, 'research_data', None)
+        if research_data is not None:
+            all_research_data.append(research_data)
+
+    # Most recent "Additional Patient Record" (education, comorbidities,
+    # BMI/weight/height, labs, KRT, medications) shown in the profile section.
+    latest_research_data = all_research_data[0] if all_research_data else None
+
     context = {
         'patient': patient,
         'patient_id_formatted': f"{patient.id:04d}",  # 4-digit patient ID
@@ -792,6 +1061,8 @@ def patient_profile_view(request, patient_id):
         'reports': all_reports,
         'medicines': all_medicines,
         'images': all_images,
+        'research_data_list': all_research_data,
+        'latest_research_data': latest_research_data,
     }
     
     return render(request, 'app/patient_profile.html', context)
@@ -829,14 +1100,109 @@ def report_autocomplete(request):
 @login_required
 @require_GET
 def medicine_autocomplete(request):
+    """
+    Medicine Name suggestions.
+
+    Combines two sources so the dropdown is genuinely useful:
+      1. HISTORY   - medicines this doctor has personally prescribed before,
+         each annotated with how many times it's been used and the most
+         recent strength/frequency/remark/duration, so picking one can
+         auto-fill the rest of the row.
+      2. CATALOGUE - the master medicine list imported from data/Medicines.csv.
+
+    Matching is "dynamic": the query is split into whitespace-separated
+    tokens and a name only has to contain every token (in any order,
+    case-insensitive) to match - e.g. "napa ext" matches "Napa Extend".
+    Results are ranked: history first (most used, then most recent), then
+    catalogue matches - and within each group, names that START WITH the
+    full query outrank names that merely contain the tokens.
+    """
     query = request.GET.get('q', '').strip()
-    meds = (Medicine.objects
-            .filter(prescription__patient__doctor=request.user, 
-                    name__icontains=query)
-            .values('name')
-            .annotate(total=Count('id'))
-            .order_by('-total')[:10])
-    data = [{'name': m['name'], 'count': m['total']} for m in meds]
+    if not query:
+        return JsonResponse([], safe=False)
+
+    tokens = [t for t in query.split() if t]
+    token_filter = Q()
+    for t in tokens:
+        token_filter &= Q(name__icontains=t)
+
+    def rank(name):
+        lname = name.lower()
+        if lname.startswith(query.lower()):
+            return 0
+        if tokens and lname.startswith(tokens[0].lower()):
+            return 1
+        return 2
+
+    MAX_RESULTS = 15
+
+    # --- 1. Doctor's own prescribing history --------------------------------
+    history_qs = (
+        Medicine.objects
+        .filter(prescription__patient__doctor=request.user)
+        .filter(token_filter)
+        .values('name')
+        .annotate(
+            total=Count('id'),
+            last_used=Max('prescription__created_at'),
+        )
+        .order_by('-total', '-last_used')[:MAX_RESULTS]
+    )
+
+    history_results = []
+    seen_names_lower = set()
+    for row in history_qs:
+        name = row['name']
+        # Grab the most recently used strength/frequency/remark/days for
+        # this medicine name so the frontend can auto-fill them.
+        last_entry = (
+            Medicine.objects
+            .filter(prescription__patient__doctor=request.user, name=name)
+            .order_by('-prescription__created_at', '-id')
+            .values('strength', 'frequency', 'remark', 'days')
+            .first()
+        ) or {}
+        history_results.append({
+            'name': name,
+            'source': 'history',
+            'count': row['total'],
+            'strength': last_entry.get('strength', ''),
+            'frequency': last_entry.get('frequency', ''),
+            'remark': last_entry.get('remark', ''),
+            'days': last_entry.get('days'),
+        })
+        seen_names_lower.add(name.lower())
+
+    history_results.sort(key=lambda r: (rank(r['name']), -r['count']))
+
+    # --- 2. Master catalogue -------------------------------------------------
+    remaining_slots = MAX_RESULTS - len(history_results)
+    catalogue_results = []
+    if remaining_slots > 0:
+        catalogue_qs = (
+            MedicineMaster.objects
+            .filter(token_filter)
+            .order_by('name')
+            .values_list('name', flat=True)[:remaining_slots * 3]  # over-fetch, then rank+dedupe
+        )
+        for name in catalogue_qs:
+            if name.lower() in seen_names_lower:
+                continue  # already suggested from history
+            catalogue_results.append({
+                'name': name,
+                'source': 'catalog',
+                'count': None,
+                'strength': '',
+                'frequency': '',
+                'remark': '',
+                'days': None,
+            })
+            seen_names_lower.add(name.lower())
+
+        catalogue_results.sort(key=lambda r: (rank(r['name']), r['name'].lower()))
+        catalogue_results = catalogue_results[:remaining_slots]
+
+    data = history_results + catalogue_results
     return JsonResponse(data, safe=False)
 
 @login_required

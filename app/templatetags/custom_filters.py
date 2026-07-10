@@ -46,3 +46,19 @@ def duration_bn(days):
         return f"{to_bn_number(d // 7)} সপ্তাহ"
 
     return f"{to_bn_number(d)} দিন"
+
+
+# --- Pagination helper ---
+@register.simple_tag(takes_context=True)
+def querystring_replace(context, **kwargs):
+    """
+    Re-builds the current URL's query string with one or more params
+    overridden (e.g. `page`), so pagination links keep every active
+    search/filter param instead of only `q`.
+    Usage: ?{% querystring_replace page=page_obj.next_page_number %}
+    """
+    request = context['request']
+    params = request.GET.copy()
+    for key, value in kwargs.items():
+        params[key] = value
+    return params.urlencode()
