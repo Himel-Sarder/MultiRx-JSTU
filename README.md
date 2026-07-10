@@ -357,7 +357,7 @@ flowchart TB
 MultiRx-JSTU/
 ├── manage.py
 ├── requirements.txt
-├── Dockerfile
+|
 ├── entrypoint.sh
 ├── render.yaml
 ├── LICENSE
@@ -458,7 +458,7 @@ If `DATABASE_URL` isn't set, the app falls back to a local `sqlite:///db.sqlite3
 
 ---
 
-## 🗺 URL / Route Map
+## URL / Route Map
 
 | Path | View | Purpose |
 |---|---|---|
