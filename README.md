@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🩺 MultiRx
+# MultiRx
 
 ### A Django-based Digital Prescription & CKD Clinical Registry Platform
 
@@ -15,7 +15,7 @@ Built and maintained by developers of **JSTU** (Jatiya Sheikh Hasina Textile Eng
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
 - [About the Project](#-about-the-project)
 - [Key Features](#-key-features)
@@ -40,7 +40,7 @@ Built and maintained by developers of **JSTU** (Jatiya Sheikh Hasina Textile Eng
 
 ---
 
-## 📌 About the Project
+## About the Project
 
 **MultiRx** is a full-stack web application built with **Django** that helps doctors digitize the entire
 prescription workflow — from registering a patient, writing a structured prescription (problems,
@@ -53,25 +53,25 @@ medicine master catalogue.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Module | Description |
 |---|---|
-| 🔐 **Custom Doctor Auth** | Custom `Doctor` user model (`doctor_id` based login, no username) with restricted, whitelisted registration (`doctor_id` must start with `HF`) |
-| 🧑‍🤝‍🧑 **Patient Management** | Create, search, view profile & delete patients, scoped per-doctor |
-| 📝 **Structured Prescriptions** | Add multiple **Problems**, **Examinations**, **Reports** (+ uploaded report images), and **Medicines** per prescription |
-| 📄 **PDF Prescription Generator** | Auto-generates a print-ready, hospital-letterhead-styled prescription PDF using **WeasyPrint**, with Bangla font support |
-| 🔬 **Clinical Research Registry** | A dedicated post-prescription form capturing CKD-specific data: comorbidities, KRT modality, labs (eGFR, uACR, HbA1c, etc.), medications, socio-economic data — kept **out** of the printed PDF, used only for registry/analytics |
-| 📊 **Analytics Dashboard** | Interactive Plotly charts: gender split, age distribution, address distribution, top medicines, top problems, monthly trend, comorbidity prevalence, smoking status, KRT modality, employment status — filterable by year/month |
-| 🔎 **Smart Search & Filters** | Search patients with advanced research-data filters (diagnosis, comorbidities, KRT modality, smoking, etc.) |
-| 📥 **Excel Export** | Export filtered patient/prescription data to `.xlsx` via `openpyxl` |
-| ⚡ **Autocomplete APIs** | AJAX autocomplete endpoints for Problems, Examinations, Reports, and Medicines (backed by a `MedicineMaster` catalogue imported from CSV) |
-| 🖼️ **Profile Management** | Doctor profile picture upload/change |
-| 🐳 **Docker & Render Ready** | Ships with a `Dockerfile`, `entrypoint.sh`, and `render.yaml` for one-click containerized deployment |
+| **Custom Doctor Auth** | Custom `Doctor` user model (`doctor_id` based login, no username) with restricted, whitelisted registration (`doctor_id` must start with `HF`) |
+| **Patient Management** | Create, search, view profile & delete patients, scoped per-doctor |
+| **Structured Prescriptions** | Add multiple **Problems**, **Examinations**, **Reports** (+ uploaded report images), and **Medicines** per prescription |
+| **PDF Prescription Generator** | Auto-generates a print-ready, hospital-letterhead-styled prescription PDF using **WeasyPrint**, with Bangla font support |
+| **Clinical Research Registry** | A dedicated post-prescription form capturing CKD-specific data: comorbidities, KRT modality, labs (eGFR, uACR, HbA1c, etc.), medications, socio-economic data — kept **out** of the printed PDF, used only for registry/analytics |
+| **Analytics Dashboard** | Interactive Plotly charts: gender split, age distribution, address distribution, top medicines, top problems, monthly trend, comorbidity prevalence, smoking status, KRT modality, employment status — filterable by year/month |
+| **Smart Search & Filters** | Search patients with advanced research-data filters (diagnosis, comorbidities, KRT modality, smoking, etc.) |
+| **Excel Export** | Export filtered patient/prescription data to `.xlsx` via `openpyxl` |
+| **Autocomplete APIs** | AJAX autocomplete endpoints for Problems, Examinations, Reports, and Medicines (backed by a `MedicineMaster` catalogue imported from CSV) |
+| **Profile Management** | Doctor profile picture upload/change |
+| **Docker & Render Ready** | Ships with a `Dockerfile`, `entrypoint.sh`, and `render.yaml` for one-click containerized deployment |
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 - **Backend:** Django 5 (Python 3.11)
 - **Database:** SQLite (dev) / PostgreSQL via `dj-database-url` (production)
@@ -85,15 +85,15 @@ medicine master catalogue.
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client["🌐 Client (Browser)"]
+    subgraph Client["Client (Browser)"]
         UI["Doctor's Browser<br/>Tailwind UI + Plotly.js"]
     end
 
-    subgraph Server["🐍 Django Application (multirx project)"]
+    subgraph Server["Django Application (multirx project)"]
         URLS["urls.py<br/>Routing Layer"]
         VIEWS["app/views.py<br/>Business Logic"]
         FORMS["app/forms.py<br/>Validation"]
@@ -103,7 +103,7 @@ flowchart TB
         EXPORT["openpyxl<br/>Excel Export"]
     end
 
-    subgraph Data["🗄 Persistence"]
+    subgraph Data["Persistence"]
         DB[("PostgreSQL / SQLite<br/>db")]
         MEDIA["Media Storage<br/>profile_pics/, report_images/"]
         STATIC["Static Files<br/>(WhiteNoise)"]
@@ -130,7 +130,7 @@ flowchart TB
 
 ---
 
-## 🗃 Database Schema (ERD)
+## Database Schema (ERD)
 
 The schema is centered on a **Doctor → Patient → Prescription** hierarchy. Each `Prescription` fans out
 into `Problem`, `Examination`, `Report`, `ReportImage`, `Medicine` (all printed on the PDF), and
@@ -280,7 +280,7 @@ erDiagram
 
 ---
 
-## 🔄 Application Flow
+## Application Flow
 
 ### Prescription Creation Flow
 
@@ -348,7 +348,7 @@ flowchart TB
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 MultiRx-JSTU/
@@ -399,7 +399,7 @@ MultiRx-JSTU/
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### Local Setup (Python/venv)
 
@@ -442,7 +442,7 @@ starts Gunicorn on container boot.
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Description | Example |
 |---|---|---|
@@ -478,7 +478,7 @@ If `DATABASE_URL` isn't set, the app falls back to a local `sqlite:///db.sqlite3
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 MultiRx ships ready for containerized deployment:
 
@@ -492,7 +492,7 @@ MultiRx ships ready for containerized deployment:
 
 ---
 
-## 🧩 Screens & Modules Overview
+## Screens & Modules Overview
 
 - **Home** — Landing dashboard for logged-in doctors.
 - **Prescribe** — Structured form to capture patient details, problems, examinations, reports (with
@@ -508,7 +508,7 @@ MultiRx ships ready for containerized deployment:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, issues, and feature requests are welcome!
 
@@ -520,17 +520,17 @@ Contributions, issues, and feature requests are welcome!
 
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👤 Contact
+## Contact
 
 **Himel Sarder**
 Dept. of CSE, JSTU · Session 2021–22
-📧 info.himelcse@gmail.com
+info.himelcse@gmail.com
 
 **Supervised by:** Dr. Mahmudul Alam, Assistant Professor, JSTU
-📧 mahmudul@jstu.ac.bd
+mahmudul@jstu.ac.bd
