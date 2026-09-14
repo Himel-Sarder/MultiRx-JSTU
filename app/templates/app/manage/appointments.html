@@ -1,0 +1,108 @@
+{% extends 'app/base.html' %}
+{% block title %}All Appointments{% endblock %}
+{% block page_title %}All Appointments{% endblock %}
+{% block page_subtitle %}{{ day|date:"l, j F Y" }} · every doctor{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Filters -->
+  <form method="get" class="card card-pad flex flex-wrap items-end gap-4">
+    <div>
+      <label class="field-label" for="date">Date</label>
+      <input type="date" name="date" id="date" value="{{ day|date:'Y-m-d' }}" class="form-input w-48"
+             onchange="this.form.submit()">
+    </div>
+    <div>
+      <label class="field-label" for="status">Status</label>
+      <select name="status" id="status" class="form-input w-48" onchange="this.form.submit()">
+        <option value="">Any status</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <a href="{% url 'admin_appointments' %}" class="btn btn-ghost">Today</a>
+
+    <div class="ml-auto flex flex-wrap gap-2">
+      <span class="badge badge-slate">{{ summary.total }} total</span>
+      <span class="badge badge-amber">{{ summary.waiting }} waiting</span>
+      <span class="badge badge-green">{{ summary.completed }} completed</span>
+      {% if summary.cancelled %}<span class="badge badge-red">{{ summary.cancelled }} cancelled</span>{% endif %}
+    </div>
+  </form>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto scroll-thin">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200 bg-slate-50">
+            <th class="py-3 px-6">Serial</th>
+            <th class="py-3 pr-4">Patient</th>
+            <th class="py-3 pr-4">Doctor</th>
+            <th class="py-3 pr-4">Status</th>
+            <th class="py-3 pr-4">Times</th>
+            <th class="py-3 pr-4">Booked by</th>
+            <th class="py-3 pr-6">Rx</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for appt in appointments %}
+            <tr>
+              <td class="py-3 px-6">
+                <span class="inline-flex w-9 h-9 rounded-lg items-center justify-center font-bold text-xs
+                  {% if appt.status == 'in_consultation' %}bg-emerald-600 text-white
+                  {% elif appt.status == 'waiting' %}bg-amber-100 text-amber-800
+                  {% elif appt.status == 'cancelled' %}bg-red-50 text-red-700
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                  {{ appt.serial|stringformat:"02d" }}
+                </span>
+              </td>
+              <td class="py-3 pr-4">
+                <a href="{% url 'patient_profile' appt.patient.id %}" class="font-semibold text-slate-900 hover:text-emerald-700">
+                  {{ appt.patient.name }}
+                </a>
+                <p class="text-xs text-slate-500">
+                  P{{ appt.patient.id|stringformat:"04d" }} · {{ appt.patient.age }}y · {{ appt.patient.gender }}
+                </p>
+              </td>
+              <td class="py-3 pr-4 text-slate-700">{{ appt.doctor.display_name }}</td>
+              <td class="py-3 pr-4">
+                <span class="badge
+                  {% if appt.status == 'completed' %}badge-green
+                  {% elif appt.status == 'in_consultation' %}badge-blue
+                  {% elif appt.status == 'cancelled' %}badge-red
+                  {% else %}badge-amber{% endif %}">{{ appt.status_label }}</span>
+              </td>
+              <td class="py-3 pr-4 text-xs text-slate-500">
+                <p>Booked {{ appt.created_at|time:"g:i A" }}</p>
+                {% if appt.called_at %}<p>In {{ appt.called_at|time:"g:i A" }}</p>{% endif %}
+                {% if appt.completed_at %}<p>Out {{ appt.completed_at|time:"g:i A" }}</p>{% endif %}
+              </td>
+              <td class="py-3 pr-4 text-slate-600">
+                {{ appt.created_by.display_name|default:"—" }}
+                {% if appt.note %}<p class="text-xs text-slate-400 truncate max-w-[12rem]">{{ appt.note }}</p>{% endif %}
+              </td>
+              <td class="py-3 pr-6">
+                {% if appt.prescription_id %}
+                  <a href="{% url 'prescription_pdf' appt.prescription_id %}?view=1" target="_blank"
+                     class="text-emerald-700 font-semibold hover:underline">View</a>
+                {% else %}
+                  <span class="text-slate-400">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="py-16 text-center text-slate-400">
+                <i class="fas fa-calendar-xmark text-3xl mb-3 block"></i>
+                No appointments on {{ day|date:"j F Y" }}{% if status_filter %} with this status{% endif %}.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

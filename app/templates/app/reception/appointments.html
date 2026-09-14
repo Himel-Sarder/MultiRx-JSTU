@@ -1,0 +1,371 @@
+{% extends 'app/base.html' %}
+{% block title %}Appointments{% endblock %}
+{% block page_title %}Appointment Board{% endblock %}
+{% block page_subtitle %}{{ today|date:"l, j F Y" }} · serials are assigned in arrival order{% endblock %}
+
+{% block actions %}
+  <button type="button" onclick="openQueueModal()" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus"></i> <span class="hidden sm:inline">Add to Queue</span>
+  </button>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .queue-row {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .7rem .85rem; border: 1px solid #e2e8f0; border-radius: .75rem;
+    background: #fff; transition: all .15s ease;
+  }
+  .queue-row:hover { border-color: #a7f3d0; box-shadow: 0 4px 12px -6px rgba(15,23,42,.18); }
+  .serial-chip {
+    width: 2.5rem; height: 2.5rem; border-radius: .625rem; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .95rem;
+  }
+  .pick-row {
+    display: flex; align-items: center; gap: .75rem; width: 100%;
+    padding: .6rem .75rem; border-radius: .625rem; text-align: left;
+    border: 1px solid transparent; transition: all .12s ease;
+  }
+  .pick-row:hover { background: #f0fdf4; border-color: #a7f3d0; }
+  .pick-row.selected { background: #ecfdf5; border-color: #059669; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if doctors|length > 1 %}
+  <form method="get" class="card card-pad mb-5 flex flex-wrap items-end gap-3">
+    <div class="flex-1 min-w-[14rem]">
+      <label class="field-label" for="doctor">Filter by doctor</label>
+      <select name="doctor" id="doctor" class="form-input" onchange="this.form.submit()">
+        <option value="">All doctors</option>
+        {% for d in doctors %}
+          <option value="{{ d.id }}" {% if doctor_filter == d.id|stringformat:"s" %}selected{% endif %}>
+            {{ d.display_name }} — {{ d.doctor_id }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if doctor_filter %}
+      <a href="{% url 'reception_appointments' %}" class="btn btn-ghost">Clear</a>
+    {% endif %}
+  </form>
+{% endif %}
+
+{% if not doctor_boards %}
+  <div class="card card-pad text-center py-16">
+    <i class="fas fa-user-doctor text-4xl text-slate-300 mb-4"></i>
+    <h3 class="font-bold text-slate-800">No doctor accounts yet</h3>
+    <p class="text-sm text-slate-500 mt-1">Ask the administrator to create a doctor account (login ID HF####).</p>
+  </div>
+{% endif %}
+
+<div class="space-y-6">
+  {% for board in doctor_boards %}
+    <section class="card overflow-hidden" data-doctor-board="{{ board.doctor.id }}">
+
+      <!-- Doctor header -->
+      <div class="flex flex-wrap items-center gap-4 px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+        {% if board.doctor.profile_picture %}
+          <img src="{{ board.doctor.profile_picture.url }}" alt="" class="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow">
+        {% else %}
+          <div class="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+            <i class="fas fa-user-doctor"></i>
+          </div>
+        {% endif %}
+        <div class="min-w-0">
+          <h2 class="font-bold text-slate-900 truncate">{{ board.doctor.display_name }}</h2>
+          <p class="text-xs text-slate-500">
+            {{ board.doctor.doctor_id }}{% if board.doctor.specialization %} · {{ board.doctor.specialization }}{% endif %}
+          </p>
+        </div>
+
+        <div class="ml-auto flex flex-wrap items-center gap-2">
+          <span class="badge badge-amber"><span data-stat="waiting">{{ board.waiting|length }}</span> waiting</span>
+          <span class="badge badge-slate"><span data-stat="completed">{{ board.completed|length }}</span> done</span>
+          <form method="post" action="{% url 'reception_send_next' %}">
+            {% csrf_token %}
+            <input type="hidden" name="doctor_id" value="{{ board.doctor.id }}">
+            <button type="submit" class="btn btn-sm {% if board.pending_call %}btn-amber{% else %}btn-primary{% endif %}"
+                    {% if board.current or not board.waiting %}disabled{% endif %}>
+              {% if board.pending_call %}
+                <i class="fas fa-bell bell-shake"></i> Send Next Patient
+              {% else %}
+                <i class="fas fa-paper-plane"></i> Send Next Patient
+              {% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {% if board.pending_call %}
+        <div class="px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
+          <i class="fas fa-bell text-amber-600 bell-shake"></i>
+          <p class="text-sm font-semibold text-amber-800">
+            {{ board.doctor.display_name }} is ready for the next patient.
+          </p>
+        </div>
+      {% endif %}
+
+      <div class="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+
+        <!-- In consultation -->
+        <div class="p-5">
+          <p class="grp-label text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <i class="fas fa-stethoscope mr-1"></i> In the room
+          </p>
+          {% if board.current %}
+            <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+              <div class="flex items-center gap-3">
+                <span class="serial-chip bg-emerald-600 text-white">{{ board.current.serial|stringformat:"02d" }}</span>
+                <div class="min-w-0">
+                  <a href="{% url 'patient_profile' board.current.patient.id %}"
+                     class="font-bold text-slate-900 hover:text-emerald-700 block truncate">
+                    {{ board.current.patient.name }}
+                  </a>
+                  <p class="text-xs text-slate-600">
+                    {{ board.current.patient.age }}y · {{ board.current.patient.gender }}
+                    {% if board.current.patient.phone %} · {{ board.current.patient.phone }}{% endif %}
+                  </p>
+                </div>
+              </div>
+              {% if board.current.note %}
+                <p class="mt-3 text-xs text-slate-600 bg-white/70 rounded-lg px-3 py-2">
+                  <i class="fas fa-note-sticky text-slate-400 mr-1"></i>{{ board.current.note }}
+                </p>
+              {% endif %}
+              <p class="mt-3 text-xs text-emerald-700 font-medium">
+                <i class="fas fa-clock mr-1"></i>Called at {{ board.current.called_at|time:"g:i A" }}
+              </p>
+            </div>
+          {% else %}
+            <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+              <i class="fas fa-door-open text-2xl mb-2"></i>
+              <p class="text-sm">Room is free</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Waiting -->
+        <div class="p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <i class="fas fa-hourglass-half mr-1"></i> Waiting ({{ board.waiting|length }})
+          </p>
+          {% if board.waiting %}
+            <div class="space-y-2 max-h-80 overflow-y-auto scroll-thin pr-1">
+              {% for appt in board.waiting %}
+                <div class="queue-row">
+                  <span class="serial-chip bg-amber-100 text-amber-800">{{ appt.serial|stringformat:"02d" }}</span>
+                  <div class="min-w-0 flex-1">
+                    <a href="{% url 'patient_profile' appt.patient.id %}"
+                       class="text-sm font-semibold text-slate-900 hover:text-emerald-700 block truncate">
+                      {{ appt.patient.name }}
+                    </a>
+                    <p class="text-xs text-slate-500 truncate">
+                      P{{ appt.patient.id|stringformat:"04d" }} · {{ appt.patient.age }}y · {{ appt.patient.gender }}
+                      {% if appt.note %} · {{ appt.note }}{% endif %}
+                    </p>
+                  </div>
+                  <form method="post" action="{% url 'reception_cancel_appointment' appt.id %}"
+                        onsubmit="return confirm('Remove {{ appt.patient.name|escapejs }} from the queue?');">
+                    {% csrf_token %}
+                    <button type="submit" class="text-slate-400 hover:text-red-600 px-1.5" title="Cancel">
+                      <i class="fas fa-xmark"></i>
+                    </button>
+                  </form>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+              <i class="fas fa-user-clock text-2xl mb-2"></i>
+              <p class="text-sm">Queue is empty</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Completed -->
+        <div class="p-5">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <i class="fas fa-circle-check mr-1"></i> Completed ({{ board.completed|length }})
+          </p>
+          {% if board.completed %}
+            <div class="space-y-2 max-h-80 overflow-y-auto scroll-thin pr-1">
+              {% for appt in board.completed %}
+                <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50">
+                  <span class="w-8 h-8 rounded-lg bg-white text-slate-500 text-xs font-bold flex items-center justify-center border border-slate-200">
+                    {{ appt.serial|stringformat:"02d" }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <a href="{% url 'patient_profile' appt.patient.id %}"
+                       class="text-sm text-slate-700 hover:text-emerald-700 truncate block">{{ appt.patient.name }}</a>
+                    <p class="text-[11px] text-slate-400">{{ appt.completed_at|time:"g:i A" }}</p>
+                  </div>
+                  {% if appt.prescription_id %}
+                    <a href="{% url 'prescription_pdf' appt.prescription_id %}?view=1" target="_blank"
+                       class="text-slate-400 hover:text-emerald-600" title="View prescription">
+                      <i class="fas fa-file-pdf"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+              <i class="fas fa-clipboard-list text-2xl mb-2"></i>
+              <p class="text-sm">Nothing completed yet</p>
+            </div>
+          {% endif %}
+
+          {% if board.cancelled %}
+            <p class="mt-4 text-xs text-slate-400">
+              {{ board.cancelled|length }} cancelled today
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  {% endfor %}
+</div>
+
+<!-- ============ Add-to-queue modal ============ -->
+<div id="queue-modal" class="hidden fixed inset-0 z-[95] items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm"
+     onclick="if (event.target === this) closeQueueModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+      <h3 class="font-bold text-slate-900"><i class="fas fa-user-plus text-emerald-600 mr-2"></i>Add patient to queue</h3>
+      <button type="button" onclick="closeQueueModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="px-6 py-4 border-b border-slate-200">
+      <input type="text" id="patient-filter" class="form-input" placeholder="Search by name, phone or ID…" autocomplete="off">
+      <p class="text-xs text-slate-400 mt-2">
+        Not registered yet?
+        <a href="{% url 'reception_new_patient' %}" class="font-semibold text-emerald-700 hover:underline">Register a new patient</a>.
+      </p>
+    </div>
+
+    <div id="patient-list" class="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-1">
+      {% for p in searchable_patients %}
+        <button type="button" class="pick-row"
+                data-id="{{ p.id }}"
+                data-name="{{ p.name }}"
+                data-doctor="{{ p.doctor_id }}"
+                data-search="{{ p.name|lower }} {{ p.phone }} p{{ p.id|stringformat:'04d' }}">
+          <span class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
+            {{ p.name|slice:":1"|upper }}
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold text-slate-900 truncate">{{ p.name }}</span>
+            <span class="block text-xs text-slate-500 truncate">
+              P{{ p.id|stringformat:"04d" }} · {{ p.age }}y · {{ p.gender }}{% if p.phone %} · {{ p.phone }}{% endif %}
+            </span>
+          </span>
+          <i class="fas fa-check text-emerald-600 opacity-0 check-mark"></i>
+        </button>
+      {% empty %}
+        <p class="text-sm text-slate-400 text-center py-8">No patients registered yet.</p>
+      {% endfor %}
+      <p id="no-match" class="hidden text-sm text-slate-400 text-center py-8">No patient matches that search.</p>
+    </div>
+
+    <form id="queue-form" method="post" class="px-6 py-4 border-t border-slate-200 space-y-3">
+      {% csrf_token %}
+      <div>
+        <label class="field-label" for="{{ add_form.doctor.id_for_label }}">Doctor</label>
+        {{ add_form.doctor }}
+      </div>
+      <div>
+        <label class="field-label" for="{{ add_form.note.id_for_label }}">Note (optional)</label>
+        {{ add_form.note }}
+      </div>
+      <div class="flex items-center gap-3 pt-1">
+        <p id="selected-label" class="text-sm text-slate-500 flex-1 truncate">No patient selected</p>
+        <button type="button" onclick="closeQueueModal()" class="btn btn-ghost btn-sm">Cancel</button>
+        <button type="submit" id="queue-submit" class="btn btn-primary btn-sm" disabled>
+          <i class="fas fa-list-ol"></i> Give Serial
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const modal = document.getElementById('queue-modal');
+  const form = document.getElementById('queue-form');
+  const submit = document.getElementById('queue-submit');
+  const label = document.getElementById('selected-label');
+  const filter = document.getElementById('patient-filter');
+  const noMatch = document.getElementById('no-match');
+  const doctorSelect = form.querySelector('select[name="doctor"]');
+  // The queue URL carries the patient id, so build it from a template route.
+  const URL_TEMPLATE = "{% url 'reception_queue_patient' 0 %}";
+
+  window.openQueueModal = function () {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    filter.focus();
+  };
+  window.closeQueueModal = function () {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  };
+
+  document.querySelectorAll('.pick-row').forEach(function (row) {
+    row.addEventListener('click', function () {
+      document.querySelectorAll('.pick-row').forEach(function (r) {
+        r.classList.remove('selected');
+        r.querySelector('.check-mark').style.opacity = '0';
+      });
+      row.classList.add('selected');
+      row.querySelector('.check-mark').style.opacity = '1';
+
+      form.action = URL_TEMPLATE.replace('/0/', '/' + row.dataset.id + '/');
+      label.textContent = 'Selected: ' + row.dataset.name;
+      submit.disabled = false;
+
+      // Default to the doctor this patient is registered under.
+      if (doctorSelect && row.dataset.doctor) {
+        const opt = doctorSelect.querySelector('option[value="' + row.dataset.doctor + '"]');
+        if (opt) doctorSelect.value = row.dataset.doctor;
+      }
+    });
+  });
+
+  filter.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('.pick-row').forEach(function (row) {
+      const hit = !q || row.dataset.search.indexOf(q) !== -1;
+      row.style.display = hit ? '' : 'none';
+      if (hit) visible++;
+    });
+    noMatch.classList.toggle('hidden', visible > 0);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeQueueModal();
+  });
+
+  // The board is a snapshot; reload it as soon as the server state moves on
+  // (a doctor finished, another desk queued someone) — but never while the
+  // receptionist is mid-way through the add-to-queue dialog.
+  let baseline = null;
+  document.addEventListener('reception:update', function (e) {
+    const signature = JSON.stringify((e.detail.board || []).map(function (b) {
+      return [b.doctor_id, b.waiting, b.completed, b.current ? b.current.serial : null];
+    }));
+    if (baseline === null) { baseline = signature; return; }
+    if (signature !== baseline && modal.classList.contains('hidden')) {
+      window.location.reload();
+    }
+  });
+})();
+</script>
+{% endblock %}

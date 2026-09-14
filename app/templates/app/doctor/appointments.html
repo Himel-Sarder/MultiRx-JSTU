@@ -1,0 +1,222 @@
+{% extends 'app/base.html' %}
+{% block title %}Appointments{% endblock %}
+{% block page_title %}My Appointments{% endblock %}
+{% block page_subtitle %}{{ today|date:"l, j F Y" }} · patients arrive in serial order{% endblock %}
+
+{% block actions %}
+  <form method="post" action="{% url 'doctor_next_patient' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-amber btn-sm">
+      <i class="fas fa-bell"></i> <span class="hidden sm:inline">Next Patient</span>
+    </button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="grid lg:grid-cols-3 gap-6">
+
+  <!-- ===== Current consultation ===== -->
+  <div class="lg:col-span-2 space-y-6">
+    <div class="card overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="section-title"><i class="fas fa-stethoscope text-emerald-600"></i> Current patient</h2>
+        {% if current %}<span class="badge badge-green">In consultation</span>{% endif %}
+      </div>
+
+      {% if current %}
+        <div class="p-6">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="w-16 h-16 rounded-2xl bg-emerald-600 text-white text-2xl font-extrabold flex items-center justify-center flex-shrink-0">
+              {{ current.serial|stringformat:"02d" }}
+            </span>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-xl font-bold text-slate-900">{{ current.patient.name }}</h3>
+              <p class="text-sm text-slate-600 mt-0.5">
+                P{{ current.patient.id|stringformat:"04d" }} · {{ current.patient.age }} years · {{ current.patient.gender }}
+              </p>
+              <p class="text-sm text-slate-500">
+                {% if current.patient.phone %}<i class="fas fa-phone text-xs mr-1"></i>{{ current.patient.phone }} · {% endif %}
+                <i class="fas fa-location-dot text-xs mr-1"></i>{{ current.patient.address }}
+              </p>
+            </div>
+          </div>
+
+          {% if current.note %}
+            <p class="mt-5 text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <i class="fas fa-note-sticky text-amber-600 mr-1"></i>
+              <b>Reception note:</b> {{ current.note }}
+            </p>
+          {% endif %}
+
+          {% with rd=current.patient.research_data %}
+            {% if rd %}
+              <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                  From the Additional Patient Record
+                </p>
+                <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2.5 text-sm">
+                  {% if rd.diagnosis %}
+                    <div class="sm:col-span-2 lg:col-span-3">
+                      <dt class="text-xs text-slate-500">Diagnosis</dt>
+                      <dd class="font-semibold text-slate-800">{{ rd.diagnosis }}</dd>
+                    </div>
+                  {% endif %}
+                  {% if rd.comorbidities_list %}
+                    <div class="sm:col-span-2 lg:col-span-3">
+                      <dt class="text-xs text-slate-500 mb-1">Comorbidities</dt>
+                      <dd class="flex flex-wrap gap-1.5">
+                        {% for c in rd.comorbidities_list %}<span class="badge badge-red">{{ c }}</span>{% endfor %}
+                      </dd>
+                    </div>
+                  {% endif %}
+                  {% if rd.egfr %}<div><dt class="text-xs text-slate-500">eGFR</dt><dd class="font-semibold text-slate-800">{{ rd.egfr }}</dd></div>{% endif %}
+                  {% if rd.serum_creatinine %}<div><dt class="text-xs text-slate-500">Creatinine</dt><dd class="font-semibold text-slate-800">{{ rd.serum_creatinine }}</dd></div>{% endif %}
+                  {% if rd.hemoglobin %}<div><dt class="text-xs text-slate-500">Hemoglobin</dt><dd class="font-semibold text-slate-800">{{ rd.hemoglobin }}</dd></div>{% endif %}
+                  {% if rd.bmi %}<div><dt class="text-xs text-slate-500">BMI</dt><dd class="font-semibold text-slate-800">{{ rd.bmi }}</dd></div>{% endif %}
+                  {% if rd.krt_modality %}<div><dt class="text-xs text-slate-500">KRT modality</dt><dd class="font-semibold text-slate-800">{{ rd.krt_modality }}</dd></div>{% endif %}
+                  {% if rd.hba1c %}<div><dt class="text-xs text-slate-500">HbA1c</dt><dd class="font-semibold text-slate-800">{{ rd.hba1c }}</dd></div>{% endif %}
+                </dl>
+                <a href="{% url 'patient_profile' current.patient.id %}"
+                   class="inline-block mt-3 text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                  See the whole record <i class="fas fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <div class="flex flex-wrap gap-3 mt-6">
+            <a href="{% url 'prescribe_with_patient' current.patient.id %}" class="btn btn-primary">
+              <i class="fas fa-file-prescription"></i> Write prescription
+            </a>
+            <a href="{% url 'patient_profile' current.patient.id %}" class="btn btn-ghost">
+              <i class="fas fa-folder-open"></i> Full record
+            </a>
+            <form method="post" action="{% url 'doctor_next_patient' %}" class="ml-auto">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-amber">
+                <i class="fas fa-forward"></i> Done — call next patient
+              </button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="p-6">
+          <div class="text-center py-12 border border-dashed border-slate-200 rounded-xl">
+            <i class="fas fa-door-open text-4xl text-slate-300 mb-4"></i>
+            <h3 class="font-bold text-slate-800">The room is free</h3>
+            {% if call_pending %}
+              <p class="text-sm text-amber-700 mt-2 font-medium">
+                <i class="fas fa-bell bell-shake mr-1"></i>
+                Reception has been notified — waiting for them to send the next patient in.
+              </p>
+            {% elif waiting %}
+              <p class="text-sm text-slate-500 mt-2">
+                {{ waiting|length }} patient{{ waiting|length|pluralize }} waiting. Ring reception when you are ready.
+              </p>
+              <form method="post" action="{% url 'doctor_next_patient' %}" class="mt-5">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-amber">
+                  <i class="fas fa-bell"></i> Call next patient
+                </button>
+              </form>
+            {% else %}
+              <p class="text-sm text-slate-500 mt-2">Nobody is waiting. Reception will queue the next arrival.</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ===== Completed today ===== -->
+    <div class="card">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="section-title"><i class="fas fa-circle-check text-slate-500"></i> Seen today</h2>
+        <span class="badge badge-slate">{{ completed|length }}</span>
+      </div>
+      <div class="divide-y divide-slate-100">
+        {% for appt in completed %}
+          <div class="flex items-center gap-3 px-6 py-3.5">
+            <span class="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 text-sm font-bold flex items-center justify-center">
+              {{ appt.serial|stringformat:"02d" }}
+            </span>
+            <div class="min-w-0 flex-1">
+              <a href="{% url 'patient_profile' appt.patient.id %}"
+                 class="text-sm font-semibold text-slate-900 hover:text-emerald-700 truncate block">
+                {{ appt.patient.name }}
+              </a>
+              <p class="text-xs text-slate-500">Finished {{ appt.completed_at|time:"g:i A" }}</p>
+            </div>
+            {% if appt.prescription_id %}
+              <a href="{% url 'prescription_pdf' appt.prescription_id %}?view=1" target="_blank" class="btn btn-ghost btn-sm">
+                <i class="fas fa-file-pdf"></i> View
+              </a>
+            {% else %}
+              <a href="{% url 'prescribe_with_patient' appt.patient.id %}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-pen"></i> Prescribe
+              </a>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="text-center py-12 text-slate-400">
+            <i class="fas fa-clipboard-list text-2xl mb-2"></i>
+            <p class="text-sm">No consultations completed yet today.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Waiting queue ===== -->
+  <div class="card self-start">
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h2 class="section-title"><i class="fas fa-hourglass-half text-amber-600"></i> Waiting</h2>
+      <span id="waiting-pill" class="badge badge-amber">{{ waiting|length }}</span>
+    </div>
+    <div class="p-4 space-y-2">
+      {% for appt in waiting %}
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200">
+          <span class="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 text-sm font-bold flex items-center justify-center flex-shrink-0">
+            {{ appt.serial|stringformat:"02d" }}
+          </span>
+          <div class="min-w-0 flex-1">
+            <a href="{% url 'patient_profile' appt.patient.id %}"
+               class="text-sm font-semibold text-slate-900 hover:text-emerald-700 truncate block">
+              {{ appt.patient.name }}
+            </a>
+            <p class="text-xs text-slate-500 truncate">
+              {{ appt.patient.age }}y · {{ appt.patient.gender }}{% if appt.note %} · {{ appt.note }}{% endif %}
+            </p>
+          </div>
+        </div>
+      {% empty %}
+        <div class="text-center py-12 text-slate-400">
+          <i class="fas fa-user-clock text-2xl mb-2"></i>
+          <p class="text-sm">Nobody waiting.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if cancelled %}
+      <div class="px-6 py-3 border-t border-slate-200 text-xs text-slate-400">
+        {{ cancelled|length }} appointment{{ cancelled|length|pluralize }} cancelled today
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Reload as soon as reception sends the next patient in, so the doctor never
+  // has to refresh manually.
+  (function () {
+    let baseline = null;
+    document.addEventListener('queue:update', function (e) {
+      const d = e.detail;
+      const signature = JSON.stringify([d.current ? d.current.id : null, d.waiting_count]);
+      if (baseline === null) { baseline = signature; return; }
+      if (signature !== baseline) window.location.reload();
+    });
+  })();
+</script>
+{% endblock %}

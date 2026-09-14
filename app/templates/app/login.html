@@ -1,308 +1,147 @@
 {% extends 'app/base.html' %}
-{% block content %}
+{% block title %}Sign in{% endblock %}
 
-<style>
-  .bg-cover-img {
-    background-image: url('https://i.postimg.cc/02cSd591/8.jpg');
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    z-index: 0;
-  }
-  .bg-cover-img::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: -1;
-  }
+{% block public_content %}
+<div class="min-h-screen grid lg:grid-cols-2">
 
-  .form-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-  }
-  .left-content {
-    background: linear-gradient(135deg, #2bbd9f 0%, #1e9b82 100%);
-    color: white;
-    position: relative;
-    overflow: hidden;
-  }
-  .left-content::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    transform: rotate(30deg);
-  }
-  .submit-btn {
-    background: #2bbd9f;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .submit-btn:hover {
-    background: #1e9b82;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(43, 189, 159, 0.4);
-  }
-  .submit-btn::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 5px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.5);
-    opacity: 0;
-    border-radius: 100%;
-    transform: scale(1, 1) translate(-50%);
-    transform-origin: 50% 50%;
-  }
-  .submit-btn:focus:not(:active)::after {
-    animation: ripple 1s ease-out;
-  }
-  @keyframes ripple {
-    0% {
-      transform: scale(0, 0);
-      opacity: 0.5;
-    }
-    100% {
-      transform: scale(20, 20);
-      opacity: 0;
-    }
-  }
-  .input-field {
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-  .input-field:focus {
-    border-color: #2bbd9f;
-    box-shadow: 0 0 0 3px rgba(43, 189, 159, 0.2);
-  }
-  .form-link {
-    color: #2bbd9f;
-    transition: all 0.2s ease;
-  }
-  .form-link:hover {
-    color: #1e9b82;
-    text-decoration: underline;
-  }
-  .decoration-circle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .circle-1 {
-    width: 150px;
-    height: 150px;
-    top: -50px;
-    left: -50px;
-  }
-  .circle-2 {
-    width: 80px;
-    height: 80px;
-    bottom: -20px;
-    right: -20px;
-  }
-  /* Error message styling */
-  .error-message {
-    border-left: 4px solid #f44336;
-  }
-  /* Success message styling */
-  .success-message {
-    border-left: 4px solid #4CAF50;
-  }
-</style>
+  <!-- Brand panel -->
+  <div class="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden"
+       style="background: linear-gradient(160deg, #064e3b 0%, #047857 55%, #059669 100%);">
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/5"></div>
+    <div class="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-emerald-300/10"></div>
 
-<div class="min-h-screen flex items-center justify-center bg-cover-img px-4 py-12">
-  <div class="grid grid-cols-1 md:grid-cols-2 w-full max-w-5xl mx-auto form-container">
-    
-    <!-- Left Content -->
-    <div class="p-10 flex flex-col justify-center text-center md:text-left left-content relative">
-      <div class="decoration-circle circle-1"></div>
-      <div class="decoration-circle circle-2"></div>
-      
-      <div class="relative z-10">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto md:mx-0 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <div class="relative flex items-center gap-3">
+      <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
         </svg>
-        
-        <h1 class="text-3xl md:text-4xl font-bold text-white mb-3">Welcome Back</h1>
-        <p class="text-xl text-white text-opacity-90 font-medium mb-6">Medical Services That You Can Trust</p>
-        <p class="text-white text-opacity-80">
-          Access your personalized healthcare dashboard and manage your medical records securely with our trusted platform.
-        </p>
+      </div>
+      <span class="text-2xl font-extrabold text-white">Multi<span class="text-emerald-300">Rx</span></span>
+    </div>
+
+    <div class="relative max-w-md">
+      <h2 class="text-4xl font-extrabold text-white leading-tight">
+        One clinic.<br>Two consoles.<br>Zero confusion.
+      </h2>
+      <p class="mt-4 text-emerald-100/90 leading-relaxed">
+        Reception registers patients and runs the serial queue. The doctor consults,
+        prescribes and calls the next patient — the desk hears the bell instantly.
+      </p>
+
+      <div class="mt-10 space-y-3">
+        <div class="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur px-4 py-3">
+          <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-white">
+            <i class="fas fa-user-doctor"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">Doctor Console</p>
+            <p class="text-xs text-emerald-100/80">IDs starting with <b>HF</b> — e.g. HF1234</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur px-4 py-3">
+          <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-white">
+            <i class="fas fa-headset"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">Reception Desk</p>
+            <p class="text-xs text-emerald-100/80">IDs starting with <b>RE</b> — e.g. RE1234</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Right Form -->
-    <div class="p-10 flex items-center justify-center">
-      <div class="w-full max-w-sm">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-2">Login</h2>
-          <p class="text-gray-500">Enter your credentials to access your account</p>
+    <p class="relative text-xs text-emerald-100/60">
+      &copy; {% now "Y" %} MultiRx · Jamalpur Science &amp; Technology University
+    </p>
+  </div>
+
+  <!-- Form panel -->
+  <div class="flex items-center justify-center p-6 sm:p-12 bg-slate-50">
+    <div class="w-full max-w-sm">
+      <div class="lg:hidden flex items-center gap-3 mb-8">
+        <div class="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+          </svg>
         </div>
-        
-        
-        <!-- Error Messages -->
-        {% if form.non_field_errors %}
-          <div class="mb-6 p-4 bg-red-50 rounded-lg error-message">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-red-700 font-medium">
-                  {% for error in form.non_field_errors %}
-                    {{ error }}
-                  {% endfor %}
-                </p>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        
-        <form method="post" class="space-y-6" novalidate>
-          {% csrf_token %}
-          
-          <!-- Doctor ID Field -->
-          <div>
-            <label for="id_doctor_id" class="block text-sm font-medium text-gray-700 mb-2">
-              Doctor ID
-            </label>
-            <div class="relative">
-              <input
-                type="text"
-                name="doctor_id"
-                id="id_doctor_id"
-                class="w-full px-4 py-3 border {% if form.doctor_id.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none input-field text-gray-700 placeholder-gray-400"
-                placeholder="HF1234"
-                required
-                value="{{ form.doctor_id.value|default:'' }}"
-                autocomplete="username"
-              >
-            </div>
-            {% if form.doctor_id.errors %}
-              <p class="mt-2 text-sm text-red-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                {{ form.doctor_id.errors.0 }}
-              </p>
-            {% endif %}
-          </div>
-
-
-          <!-- In your form section, modify the password field part: -->
-          <div>
-            <label for="id_password" class="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div class="relative">
-              <input
-                type="password"
-                name="password"
-                id="id_password"
-                class="w-full px-4 py-3 border {% if form.password.errors or form.non_field_errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none input-field text-gray-700 placeholder-gray-400"
-                placeholder="••••••••"
-                required
-                autocomplete="current-password"
-              >
-              <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none" onclick="togglePassword('id_password')">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
-            </div>
-            {% if form.password.errors %}
-              <p class="mt-2 text-sm text-red-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                {{ form.password.errors.0 }}
-              </p>
-            {% endif %}
-          </div>
-
-          <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input id="remember_me" name="remember_me" type="checkbox" class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
-              <label for="remember_me" class="ml-2 block text-sm text-gray-700">Remember me</label>
-            </div>
-            <div class="text-sm">
-              <a href="#" class="font-medium form-link">Forgot password?</a>
-            </div>
-          </div>
-
-          <!-- Submit Button -->
-          <button type="submit" class="w-full submit-btn text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
-            Sign in
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-1 -mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
-        </form>
-
-        <!-- Registration Link -->
-        <div class="mt-8 text-center text-sm text-gray-500">
-          Don't have an account? 
-          <a href="{% url 'register' %}" class="form-link font-medium cursor-pointer">Register here</a>
-        </div>
+        <span class="text-2xl font-extrabold text-slate-900">Multi<span class="text-emerald-600">Rx</span></span>
       </div>
+
+      <h1 class="text-2xl font-bold text-slate-900">Sign in</h1>
+      <p class="text-sm text-slate-500 mt-1 mb-7">
+        Your ID decides where you land — HF for doctors, RE for reception.
+      </p>
+
+      {% if messages %}
+        <div class="space-y-2 mb-5">
+          {% for message in messages %}
+            <div class="flash flash-{{ message.tags|default:'info' }}">
+              <i class="fas fa-circle-info mt-0.5"></i><span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+        <div class="flash flash-error mb-5">
+          <i class="fas fa-circle-exclamation mt-0.5"></i>
+          <span>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</span>
+        </div>
+      {% endif %}
+
+      <form method="post" class="space-y-5" novalidate>
+        {% csrf_token %}
+
+        <div>
+          <label for="{{ form.doctor_id.id_for_label }}" class="field-label">Login ID</label>
+          {{ form.doctor_id }}
+          {% if form.doctor_id.errors %}
+            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+              <i class="fas fa-circle-exclamation"></i>{{ form.doctor_id.errors.0 }}
+            </p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label for="{{ form.password.id_for_label }}" class="field-label">Password</label>
+          <div class="relative">
+            {{ form.password }}
+            <button type="button" onclick="togglePassword()" tabindex="-1"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <i id="pw-icon" class="fas fa-eye"></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+            <p class="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+              <i class="fas fa-circle-exclamation"></i>{{ form.password.errors.0 }}
+            </p>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full py-3">
+          Sign in <i class="fas fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <p class="mt-8 text-center text-xs text-slate-500 leading-relaxed">
+        <i class="fas fa-lock mr-1"></i>
+        Accounts are issued by the clinic administrator. There is no public sign-up.
+      </p>
     </div>
   </div>
 </div>
 
 <script>
-  // Password toggle functionality
-  function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-    field.setAttribute('type', type);
-    
-    // Update icon
-    const icon = document.querySelector(`button[onclick="togglePassword('${fieldId}')] svg`);
-    if (type === 'text') {
-      icon.innerHTML = `
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-      `;
-    } else {
-      icon.innerHTML = `
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      `;
-    }
+  function togglePassword() {
+    const field = document.getElementById('{{ form.password.id_for_label }}');
+    const icon = document.getElementById('pw-icon');
+    const showing = field.type === 'text';
+    field.type = showing ? 'password' : 'text';
+    icon.className = showing ? 'fas fa-eye' : 'fas fa-eye-slash';
   }
-
-  // Initialize all form inputs with proper styling
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll("input").forEach(input => {
-      if (input.type !== 'checkbox') {
-        input.classList.add(
-          "w-full", 
-          "px-4", 
-          "py-3", 
-          "rounded-lg", 
-          "focus:outline-none", 
-          "input-field",
-          "text-gray-700",
-          "placeholder-gray-400"
-        );
-      }
-    });
+  // Login IDs are always uppercase (HF1234 / RE1234).
+  document.getElementById('{{ form.doctor_id.id_for_label }}').addEventListener('input', function () {
+    this.value = this.value.toUpperCase();
   });
 </script>
-
 {% endblock %}

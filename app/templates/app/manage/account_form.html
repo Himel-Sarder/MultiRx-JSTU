@@ -1,0 +1,198 @@
+{% extends 'app/base.html' %}
+{% block title %}{% if creating %}New Account{% else %}Edit {{ account.doctor_id }}{% endif %}{% endblock %}
+{% block page_title %}{% if creating %}New Account{% else %}Edit Account{% endif %}{% endblock %}
+{% block page_subtitle %}
+  {% if creating %}The login ID decides the role and which console opens
+  {% else %}{{ account.doctor_id }} · {{ account.role_label }}{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .research-checkbox {
+    width: 1.05rem; height: 1.05rem; accent-color: #059669; cursor: pointer;
+  }
+  .id-hint {
+    display: flex; gap: .6rem; align-items: flex-start;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .625rem;
+    padding: .7rem .85rem; font-size: .8rem; color: #475569;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5">
+
+  <form method="post" class="card card-pad space-y-6" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="flash flash-error">
+        <i class="fas fa-circle-exclamation mt-0.5"></i>
+        <span>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</span>
+      </div>
+    {% endif %}
+
+    <div>
+      <h2 class="section-title pb-3 border-b border-slate-200">
+        <i class="fas fa-id-card text-emerald-600"></i> Identity
+      </h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="field-label" for="{{ form.doctor_id.id_for_label }}">Login ID <span class="text-red-500">*</span></label>
+        {{ form.doctor_id }}
+        {% for e in form.doctor_id.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.role.id_for_label }}">Role</label>
+        {{ form.role }}
+        {% for e in form.role.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+        <p class="text-xs text-slate-500 mt-1" id="role-note"></p>
+      </div>
+    </div>
+
+    <div class="id-hint">
+      <i class="fas fa-lightbulb text-amber-500 mt-0.5"></i>
+      <span>
+        <b>HF</b> + 4 digits → Doctor Console · <b>RE</b> + 4 digits → Reception Desk ·
+        anything else → Administrator (this panel). A clinic-format ID always wins over the
+        Role dropdown, so the two can never disagree.
+      </span>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="field-label" for="{{ form.first_name.id_for_label }}">First name</label>
+        {{ form.first_name }}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+        {{ form.last_name }}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.email.id_for_label }}">Email</label>
+        {{ form.email }}
+        {% for e in form.email.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.phone.id_for_label }}">Phone</label>
+        {{ form.phone }}
+      </div>
+      <div class="sm:col-span-2" id="specialization-wrap">
+        <label class="field-label" for="{{ form.specialization.id_for_label }}">Specialization <span class="font-normal text-slate-400">(doctors only)</span></label>
+        {{ form.specialization }}
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2.5 text-sm text-slate-700">
+      {{ form.is_active }}
+      <span>Account is active and able to sign in</span>
+    </label>
+    {% for e in form.is_active.errors %}<p class="text-xs text-red-600">{{ e }}</p>{% endfor %}
+
+    <div>
+      <h2 class="section-title pb-3 border-b border-slate-200">
+        <i class="fas fa-key text-emerald-600"></i>
+        {% if creating %}Password{% else %}Change password{% endif %}
+      </h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="field-label" for="{{ form.password1.id_for_label }}">
+          {% if creating %}Password <span class="text-red-500">*</span>{% else %}New password{% endif %}
+        </label>
+        {{ form.password1 }}
+        {% if form.password1.help_text %}
+          <p class="text-xs text-slate-500 mt-1">{{ form.password1.help_text }}</p>
+        {% endif %}
+        {% for e in form.password1.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+        {{ form.password2 }}
+        {% for e in form.password2.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="flex flex-wrap justify-end gap-3 pt-2 border-t border-slate-200">
+      <a href="{% url 'admin_accounts' %}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-floppy-disk"></i>
+        {% if creating %}Create account{% else %}Save changes{% endif %}
+      </button>
+    </div>
+  </form>
+
+  {% if not creating %}
+    <div class="card card-pad">
+      <h2 class="section-title mb-3"><i class="fas fa-circle-info text-slate-500"></i> Account details</h2>
+      <dl class="grid sm:grid-cols-3 gap-5 text-sm">
+        <div>
+          <dt class="text-xs uppercase tracking-wider font-bold text-slate-400">Joined</dt>
+          <dd class="font-semibold text-slate-800">{{ account.date_joined|date:"j M Y" }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wider font-bold text-slate-400">Last login</dt>
+          <dd class="font-semibold text-slate-800">{{ account.last_login|date:"j M Y, g:i A"|default:"Never" }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs uppercase tracking-wider font-bold text-slate-400">Django admin</dt>
+          <dd class="font-semibold text-slate-800">{% if account.is_staff %}Yes{% else %}No{% endif %}</dd>
+        </div>
+      </dl>
+
+      {% if is_self %}
+        <p class="mt-4 text-xs text-slate-500">
+          <i class="fas fa-shield-halved mr-1"></i>
+          This is your own account — you cannot deactivate it or drop your administrator role.
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Mirror the server-side rule: a clinic-format ID dictates the role, so lock
+  // the dropdown and explain why while such an ID is typed.
+  (function () {
+    const idField = document.getElementById('{{ form.doctor_id.id_for_label }}');
+    const roleField = document.getElementById('{{ form.role.id_for_label }}');
+    const note = document.getElementById('role-note');
+    const specWrap = document.getElementById('specialization-wrap');
+    if (!idField || !roleField) return;
+
+    function derivedRole(value) {
+      const id = (value || '').trim().toUpperCase();
+      if (id.length !== 6 || !/^\d{4}$/.test(id.slice(2))) return null;
+      if (id.startsWith('HF')) return 'doctor';
+      if (id.startsWith('RE')) return 'receptionist';
+      return null;
+    }
+
+    function sync() {
+      const derived = derivedRole(idField.value);
+      if (derived) {
+        roleField.value = derived;
+        roleField.disabled = true;
+        note.textContent = 'Set automatically from the ID prefix.';
+      } else {
+        roleField.disabled = false;
+        note.textContent = idField.value.trim()
+          ? 'Free-form ID — choose the role (Administrator opens this panel).'
+          : '';
+      }
+      specWrap.style.display = roleField.value === 'doctor' ? '' : 'none';
+    }
+
+    // A disabled select is not submitted, so re-enable it just before submit.
+    idField.form.addEventListener('submit', function () { roleField.disabled = false; });
+    idField.addEventListener('input', sync);
+    roleField.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+{% endblock %}

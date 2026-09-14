@@ -356,7 +356,7 @@
         
         <div class="doctor-info">
           <div>
-            <div class="doctor-name">Dr. {{ doctor.get_full_name }}</div>
+            <div class="doctor-name">{{ doctor.display_name }}</div>
             <div class="doctor-bio">{{ doctor.specialization }}</div>
             <div class="doctor-bio">{{ doctor.bio }}</div>
           </div>
@@ -499,7 +499,7 @@
     <!-- Doctor Signature -->
     <div class="signature-area">
       <div class="signature-line"></div>
-      <div class="doctor-signature">Dr. {{ doctor.get_full_name }}</div>
+      <div class="doctor-signature">{{ doctor.display_name }}</div>
       <div>{{ doctor.specialization }}</div>
     </div>
     

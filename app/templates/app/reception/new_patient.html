@@ -1,0 +1,323 @@
+{% extends 'app/base.html' %}
+{% block title %}{% if editing %}Edit Patient{% else %}New Patient{% endif %}{% endblock %}
+{% block page_title %}{% if editing %}Edit Patient Record{% else %}New Patient Registration{% endif %}{% endblock %}
+{% block page_subtitle %}
+  {% if editing %}Updating {{ patient.name }} · P{{ patient.id|stringformat:"04d" }}
+  {% else %}Demographics and the full Additional Patient Record{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .research-checkbox {
+    width: 1.05rem; height: 1.05rem; flex: 0 0 auto; padding: 0;
+    accent-color: #059669; cursor: pointer;
+  }
+  .checkbox-item {
+    display: flex; align-items: center; gap: .6rem;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .625rem;
+    padding: .6rem .8rem; transition: all .15s ease;
+  }
+  .checkbox-item:hover { border-color: #6ee7b7; background: #f0fdf4; }
+  .checkbox-item label { font-size: .85rem; color: #334155; cursor: pointer; flex: 1; }
+  .step-badge {
+    width: 1.75rem; height: 1.75rem; border-radius: .5rem;
+    background: #059669; color: #fff; font-size: .8rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .form-section-head {
+    display: flex; align-items: center; gap: .7rem;
+    padding-bottom: .75rem; margin-bottom: 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .grp-label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #94a3b8; margin-bottom: .6rem; display: block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not available_doctors %}
+  <div class="flash flash-warning mb-5">
+    <i class="fas fa-triangle-exclamation mt-0.5"></i>
+    <span>No doctor accounts exist yet. Ask the administrator to create one (login ID <b>HF####</b>)
+      before registering patients.</span>
+  </div>
+{% endif %}
+
+<form method="post" class="max-w-5xl mx-auto space-y-5" novalidate>
+  {% csrf_token %}
+
+  <!-- 1. Patient details -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">1</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Patient Details</h2>
+        <p class="text-xs text-slate-500">Who is the patient and which doctor are they seeing?</p>
+      </div>
+    </div>
+
+    {% if patient_form.errors or assignment_form.errors %}
+      <div class="flash flash-error mb-4">
+        <i class="fas fa-circle-exclamation mt-0.5"></i>
+        <span>Please check the fields marked below.</span>
+      </div>
+    {% endif %}
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2">
+        <label class="field-label" for="{{ patient_form.name.id_for_label }}">Full Name <span class="text-red-500">*</span></label>
+        {{ patient_form.name }}
+        {% for e in patient_form.name.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ patient_form.age.id_for_label }}">Age <span class="text-red-500">*</span></label>
+        {{ patient_form.age }}
+        {% for e in patient_form.age.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ patient_form.gender.id_for_label }}">Gender <span class="text-red-500">*</span></label>
+        {{ patient_form.gender }}
+        {% for e in patient_form.gender.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="field-label" for="{{ patient_form.phone.id_for_label }}">Phone</label>
+        {{ patient_form.phone }}
+      </div>
+      <div>
+        <label class="field-label" for="{{ assignment_form.doctor.id_for_label }}">Consulting Doctor <span class="text-red-500">*</span></label>
+        {{ assignment_form.doctor }}
+        {% for e in assignment_form.doctor.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="sm:col-span-2 lg:col-span-3">
+        <label class="field-label" for="{{ patient_form.address.id_for_label }}">Address <span class="text-red-500">*</span></label>
+        {{ patient_form.address }}
+        {% for e in patient_form.address.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Additional Patient Record -->
+  <div class="flash flash-info">
+    <i class="fas fa-circle-info mt-0.5"></i>
+    <span>
+      The record below is kept for internal registry and research use. It <b>never</b> appears on the
+      printed prescription, but it is available to the doctor during consultation and can be exported
+      to Excel with filters.
+    </span>
+  </div>
+
+  <!-- 2. Education / Social -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">2</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Education &amp; Social</h2>
+        <p class="text-xs text-slate-500">Socioeconomic background</p>
+      </div>
+    </div>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div><label class="field-label">Education Level</label>{{ form.education_level }}</div>
+      <div><label class="field-label">Monthly Income</label>{{ form.monthly_income }}</div>
+      <div><label class="field-label">Employment Status</label>{{ form.employment_status }}</div>
+    </div>
+  </section>
+
+  <!-- 3. Clinical history -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">3</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Clinical History &amp; Comorbidities</h2>
+        <p class="text-xs text-slate-500">Diagnosis, comorbid conditions and risk factors</p>
+      </div>
+    </div>
+
+    <div class="mb-5">
+      <label class="field-label">Diagnosis <span class="font-normal text-slate-400">(primary renal disease / cause of failure, e.g. ERA-PRD coding)</span></label>
+      {{ form.diagnosis }}
+    </div>
+
+    <span class="grp-label">Comorbidities</span>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-5">
+      <div class="checkbox-item">{{ form.comorbid_diabetes }} <label for="{{ form.comorbid_diabetes.id_for_label }}">Diabetes</label></div>
+      <div class="checkbox-item">{{ form.comorbid_hypertension }} <label for="{{ form.comorbid_hypertension.id_for_label }}">Hypertension</label></div>
+      <div class="checkbox-item">{{ form.comorbid_heart_failure }} <label for="{{ form.comorbid_heart_failure.id_for_label }}">Heart Failure</label></div>
+      <div class="checkbox-item">{{ form.comorbid_ischemic_heart_disease }} <label for="{{ form.comorbid_ischemic_heart_disease.id_for_label }}">Ischemic Heart Disease</label></div>
+      <div class="checkbox-item">{{ form.comorbid_peripheral_artery_disease }} <label for="{{ form.comorbid_peripheral_artery_disease.id_for_label }}">Peripheral Artery Disease</label></div>
+      <div class="checkbox-item">{{ form.comorbid_stroke }} <label for="{{ form.comorbid_stroke.id_for_label }}">Stroke</label></div>
+    </div>
+
+    <span class="grp-label">Risk Factors</span>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div><label class="field-label">Smoking Status</label>{{ form.smoking_status }}</div>
+      <div><label class="field-label">Weight (kg)</label>{{ form.weight }}</div>
+      <div><label class="field-label">Height (cm)</label>{{ form.height }}</div>
+      <div>
+        <label class="field-label">BMI <span class="font-normal text-slate-400">(auto)</span></label>
+        {{ form.bmi }}
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Laboratory -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">4</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Laboratory Values &amp; Kidney Function</h2>
+        <p class="text-xs text-slate-500">Latest available results</p>
+      </div>
+    </div>
+
+    <span class="grp-label">Kidney Function</span>
+    <div class="grid sm:grid-cols-3 gap-4 mb-5">
+      <div><label class="field-label">Serum Creatinine</label>{{ form.serum_creatinine }}</div>
+      <div><label class="field-label">Cystatin C</label>{{ form.cystatin_c }}</div>
+      <div><label class="field-label">eGFR</label>{{ form.egfr }}</div>
+    </div>
+
+    <span class="grp-label">Urinalysis</span>
+    <div class="grid sm:grid-cols-2 gap-4 mb-5">
+      <div><label class="field-label">uACR</label>{{ form.uacr }}</div>
+      <div><label class="field-label">Protein Levels</label>{{ form.protein_levels }}</div>
+    </div>
+
+    <span class="grp-label">Blood Chemistry</span>
+    <div class="grid sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div><label class="field-label">Hemoglobin</label>{{ form.hemoglobin }}</div>
+      <div><label class="field-label">Ferritin</label>{{ form.ferritin }}</div>
+      <div><label class="field-label">Calcium</label>{{ form.calcium }}</div>
+      <div><label class="field-label">Phosphorus</label>{{ form.phosphorus }}</div>
+      <div><label class="field-label">PTH</label>{{ form.pth }}</div>
+      <div><label class="field-label">Potassium</label>{{ form.potassium }}</div>
+      <div><label class="field-label">Bicarbonate</label>{{ form.bicarbonate }}</div>
+      <div><label class="field-label">Serum Albumin</label>{{ form.serum_albumin }}</div>
+      <div><label class="field-label">CRP</label>{{ form.crp }}</div>
+      <div><label class="field-label">Total Cholesterol</label>{{ form.total_cholesterol }}</div>
+      <div><label class="field-label">HbA1c</label>{{ form.hba1c }}</div>
+    </div>
+  </section>
+
+  <!-- 5. KRT -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">5</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Kidney Replacement Therapy (KRT)</h2>
+        <p class="text-xs text-slate-500">Modality, dialysis and transplant history</p>
+      </div>
+    </div>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div><label class="field-label">Modality</label>{{ form.krt_modality }}</div>
+      <div><label class="field-label">Date of First KRT</label>{{ form.krt_initiation_date }}</div>
+      <div><label class="field-label">Transplant Date</label>{{ form.transplant_date }}</div>
+      <div><label class="field-label">Modality Change Dates</label>{{ form.modality_change_dates }}</div>
+      <div><label class="field-label">Dialysis Duration</label>{{ form.dialysis_duration }}</div>
+      <div><label class="field-label">Dialysis Frequency</label>{{ form.dialysis_frequency }}</div>
+      <div><label class="field-label">Vascular Access Type</label>{{ form.vascular_access_type }}</div>
+    </div>
+  </section>
+
+  <!-- 6. Medications -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">6</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Medication Data</h2>
+        <p class="text-xs text-slate-500">Ongoing therapy classes</p>
+      </div>
+    </div>
+
+    <span class="grp-label">Kidney-Related</span>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-5">
+      <div class="checkbox-item">{{ form.med_esa }} <label for="{{ form.med_esa.id_for_label }}">ESA (Erythropoietin-stimulating agents)</label></div>
+      <div class="checkbox-item">{{ form.med_iron }} <label for="{{ form.med_iron.id_for_label }}">Iron</label></div>
+      <div class="checkbox-item">{{ form.med_phosphate_binders }} <label for="{{ form.med_phosphate_binders.id_for_label }}">Phosphate binders</label></div>
+      <div class="checkbox-item">{{ form.med_vitamin_d }} <label for="{{ form.med_vitamin_d.id_for_label }}">Vitamin D</label></div>
+      <div class="checkbox-item">{{ form.med_calcimimetics }} <label for="{{ form.med_calcimimetics.id_for_label }}">Calcimimetics</label></div>
+    </div>
+
+    <span class="grp-label">Cardiovascular / Other</span>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+      <div class="checkbox-item">{{ form.med_ace_arb }} <label for="{{ form.med_ace_arb.id_for_label }}">Antihypertensives (ACE inhibitors/ARBs)</label></div>
+      <div class="checkbox-item">{{ form.med_diuretics }} <label for="{{ form.med_diuretics.id_for_label }}">Diuretics</label></div>
+      <div class="checkbox-item">{{ form.med_statins }} <label for="{{ form.med_statins.id_for_label }}">Statins</label></div>
+      <div class="checkbox-item">{{ form.med_immunosuppressives }} <label for="{{ form.med_immunosuppressives.id_for_label }}">Immunosuppressives</label></div>
+    </div>
+  </section>
+
+  {% if not editing %}
+  <!-- 7. Queue -->
+  <section class="card card-pad">
+    <div class="form-section-head">
+      <span class="step-badge">7</span>
+      <div>
+        <h2 class="text-base font-bold text-slate-900">Appointment</h2>
+        <p class="text-xs text-slate-500">Optionally give this patient a serial straight away</p>
+      </div>
+    </div>
+
+    <label class="checkbox-item max-w-lg cursor-pointer">
+      <input type="checkbox" name="add_to_queue" value="1" id="add_to_queue" class="research-checkbox" checked>
+      <span class="text-sm text-slate-800 font-medium">
+        Add to today's queue for the selected doctor
+        <span class="block text-xs text-slate-500 font-normal">The next serial number is assigned automatically.</span>
+      </span>
+    </label>
+
+    <div id="queue-note-wrap" class="mt-4 max-w-lg">
+      <label class="field-label" for="queue_note">Note for the doctor (optional)</label>
+      <input type="text" name="queue_note" id="queue_note" class="form-input"
+             placeholder="e.g. Follow-up, brought lab reports">
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Sticky action bar -->
+  <div class="sticky bottom-0 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-white/90 backdrop-blur border-t border-slate-200 z-30">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-end gap-3">
+      <a href="{% if editing %}{% url 'patient_profile' patient.id %}{% else %}{% url 'reception_dashboard' %}{% endif %}"
+         class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary" {% if not available_doctors %}disabled{% endif %}>
+        <i class="fas fa-floppy-disk"></i>
+        {% if editing %}Save Changes{% else %}Register Patient{% endif %}
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // BMI = weight(kg) / height(m)^2 — kept in sync as the receptionist types.
+  (function () {
+    const weight = document.getElementById('id_weight');
+    const height = document.getElementById('id_height');
+    const bmi = document.getElementById('id_bmi');
+    if (!weight || !height || !bmi) return;
+
+    function update() {
+      const w = parseFloat(weight.value);
+      const hCm = parseFloat(height.value);
+      if (!w || !hCm || w <= 0 || hCm <= 0) { bmi.value = ''; return; }
+      const hM = hCm / 100;
+      bmi.value = (w / (hM * hM)).toFixed(1);
+    }
+    weight.addEventListener('input', update);
+    height.addEventListener('input', update);
+    update();
+  })();
+
+  // The queue note only matters when the patient is actually being queued.
+  (function () {
+    const toggle = document.getElementById('add_to_queue');
+    const wrap = document.getElementById('queue-note-wrap');
+    if (!toggle || !wrap) return;
+    function sync() { wrap.style.display = toggle.checked ? '' : 'none'; }
+    toggle.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+{% endblock %}

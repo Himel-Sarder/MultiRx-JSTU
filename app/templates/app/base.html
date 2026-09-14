@@ -1,425 +1,594 @@
-<!DOCTYPE html>
 {% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MultiRx - Healthcare Platform</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>{% block title %}MultiRx{% endblock %} · MultiRx</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --flow-green: #0a9c7d;
-      --flow-green-light: #2bbd9f;
-      --flow-green-dark: #067a61;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    /* Navbar Styles */
-    .navbar {
-      background: linear-gradient(135deg, var(--flow-green-dark) 0%, var(--flow-green) 100%);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      position: relative;
-      z-index: 1000;
-    }
-    
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
-    .nav-link {
-      position: relative;
-      transition: all 0.3s ease;
-    }
-    
-    .nav-link:after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background: white;
-      transition: width 0.3s ease;
-    }
-    
-    .nav-link:hover:after {
-      width: 100%;
-    }
-    
-    .nav-link.active:after {
-      width: 100%;
-    }
-    
-    .mobile-menu {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.5s ease-out;
-    }
-    
-    .mobile-menu.open {
-      max-height: 500px;
-    }
-    
-    /* Footer Styles */
-    .footer {
-      background: linear-gradient(135deg, var(--flow-green-dark) 0%, var(--flow-green) 100%);
-      color: white;
-      margin-top: auto;
-    }
-    
-    .footer-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
-    .footer-links a {
-      transition: all 0.3s ease;
-    }
-    
-    .footer-links a:hover {
-      color: #c6f6e5;
-      transform: translateX(3px);
-    }
-    
-    .social-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
-    }
-    
-    .social-link:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-3px);
-    }
-    
-    /* Content Styles */
-    .content-container {
-      max-width: 100%;
-      width: 100%;
-      margin: 40px auto;
-      padding: 0 20px;
-      flex-grow: 1;
-    }
-    
-    .content-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(10, 156, 125, 0.15);
-    }
-    
-    .placeholder-item {
-      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
-      border: 2px dashed var(--flow-green-light);
-    }
-
-    /* Meet the Developer button + modal */
-    .meet-dev-btn {
-      transition: all 0.3s ease;
-      color: #000;
-    }
-
-    .meet-dev-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    .dev-modal-overlay {
-      background: rgba(6, 122, 97, 0.55);
-      backdrop-filter: blur(2px);
-    }
-
-    .dev-modal-card {
-      animation: dev-modal-in 0.25s ease-out;
-    }
-
-    @keyframes dev-modal-in {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    
-    /* Responsive Adjustments */
-    @media (min-width: 768px) {
-      .nav-links {
-        display: flex !important;
-      }
-      
-      .hamburger {
-        display: none;
-      }
-    }
-  </style>
-</head>
-<body>
-  <!-- Responsive Navbar -->
-  <header class="navbar">
-    <div class="nav-container">
-      <nav class="flex justify-between items-center py-4">
-        <!-- Logo -->
-        <div class="flex items-center">
-          <div class="bg-white rounded-lg p-1 mr-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <a href="{% url 'home' %}" class="text-2xl font-bold flex items-center">
-            <span class="text-emerald-200">Multi</span>
-            <span class="text-white">Rx</span>
-          </a>
-        </div>
-        
-        <!-- Desktop Navigation -->
-        <div class="nav-links hidden md:flex items-center space-x-2">
-          {% if request.user.is_authenticated %}
-            <a href="{% url 'home' %}" class="nav-link text-white px-4 py-2 rounded-lg">Home</a>
-            <a href="{% url 'profile' %}" class="nav-link text-white px-4 py-2 rounded-lg">Profile</a>
-            <a href="{% url 'prescribe' %}" class="nav-link text-white px-4 py-2 rounded-lg">Prescribe</a>
-            <a href="{% url 'search' %}" class="nav-link text-white px-4 py-2 rounded-lg">Search</a>
-            <a href="{% url 'analysis' %}" class="nav-link text-white px-4 py-2 rounded-lg">Analysis</a>
-            <a href="{% url 'logout' %}" class="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-emerald-100 transition">
-              <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </a>
-          {% else %}
-            <a href="{% url 'home' %}" class="nav-link text-white px-4 py-2 rounded-lg">Home</a>
-            <a href="{% url 'login' %}" class="nav-link text-white px-4 py-2 rounded-lg">Login</a>
-            <a href="{% url 'register' %}" class="nav-link text-white px-4 py-2 rounded-lg">Register</a>
-          {% endif %}
-        </div>
-        
-        <!-- Mobile menu button -->
-        <button class="hamburger md:hidden text-white focus:outline-none">
-          <i class="fas fa-bars text-2xl"></i>
-        </button>
-      </nav>
-      
-      <!-- Mobile Navigation -->
-      <div class="mobile-menu md:hidden bg-emerald-700 rounded-lg mt-2 overflow-hidden">
-        <div class="flex flex-col space-y-1 p-2">
-          {% if request.user.is_authenticated %}
-            <a href="{% url 'home' %}" class="nav-link text-white px-4 py-2 rounded-lg">Home</a>
-            <a href="{% url 'profile' %}" class="nav-link text-white px-4 py-2 rounded-lg">Profile</a>
-            <a href="{% url 'prescribe' %}" class="nav-link text-white px-4 py-2 rounded-lg">Prescribe</a>
-            <a href="{% url 'search' %}" class="nav-link text-white px-4 py-2 rounded-lg">Search</a>
-            <a href="{% url 'analysis' %}" class="nav-link text-white px-4 py-2 rounded-lg">Analysis</a>
-            <a href="{% url 'logout' %}" class="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-emerald-100 transition">
-              <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </a>
-          {% else %}
-            <a href="{% url 'home' %}" class="nav-link text-white px-4 py-2 rounded-lg">Home</a>
-            <a href="{% url 'login' %}" class="nav-link text-white px-4 py-2 rounded-lg">Login</a>
-            <a href="{% url 'register' %}" class="nav-link text-white px-4 py-2 rounded-lg">Register</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="content-container">
-    {% block content %}
-    
-    {% endblock %}
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer py-12">
-    <div class="footer-container">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <!-- Column 1: Brand Info -->
-        <div>
-          <h3 class="text-xl font-bold mb-4 flex items-center">
-            <span class="text-emerald-200">Multi</span>
-            <span class="text-white">Rx</span>
-          </h3>
-          <p class="mb-4 text-emerald-100">
-            Modern healthcare solutions for providers and patients, streamlining prescription management and medical analytics.
-          </p>
-          <div class="flex space-x-3">
-            <a href="#" class="social-link">
-              <i class="fab fa-facebook-f text-white"></i>
-            </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-twitter text-white"></i>
-            </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-linkedin-in text-white"></i>
-            </a>
-            <a href="#" class="social-link">
-              <i class="fab fa-instagram text-white"></i>
-            </a>
-          </div>
-        </div>
-        
-        <!-- Column 2: Quick Links -->
-        <div>
-          <h4 class="text-lg font-semibold mb-4 text-emerald-200">Quick Links</h4>
-          <ul class="space-y-2 footer-links">
-            <li><a href="{% url 'home' %}" class="text-emerald-100">Home</a></li>
-            <li><a href="{% url 'profile' %}" class="text-emerald-100">Profile</a></li>
-            <li><a href="{% url 'prescribe' %}" class="text-emerald-100">Prescribe</a></li>
-            <li><a href="{% url 'search' %}" class="text-emerald-100">Search</a></li>
-            <li><a href="{% url 'analysis' %}" class="text-emerald-100">Analysis</a></li>
-          </ul>
-        </div>
-        
-        <!-- Column 3: Resources -->
-        <div>
-          <h4 class="text-lg font-semibold mb-4 text-emerald-200">Resources</h4>
-          <ul class="space-y-2 footer-links">
-            <li><a href="#" class="text-emerald-100">Help Center</a></li>
-            <li><a href="#" class="text-emerald-100">Documentation</a></li>
-            <li><a href="#" class="text-emerald-100">API Reference</a></li>
-            <li><a href="#" class="text-emerald-100">Community Forum</a></li>
-            <li><a href="#" class="text-emerald-100">Training</a></li>
-          </ul>
-        </div>
-        
-        <!-- Column 4: Meet the Developer -->
-        <div>
-          <h4 class="text-lg font-semibold mb-4 text-emerald-200">Developer</h4>
-          <p class="text-emerald-100 mb-4">Built and maintained by developers of JSTU. Say hello!</p>
-          <button type="button"
-                  onclick="openDevModal()"
-                  class="meet-dev-btn inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-lg hover:bg-emerald-100">
-            <i class="fas fa-user-circle"></i> Meet the Developers
-          </button>
-        </div>
-      </div>
-      
-      <div class="border-t border-emerald-400 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
-        <p class="text-emerald-100 text-sm mb-4 md:mb-0">
-          &copy; 2026 MultiRx. All rights reserved.
-        </p>
-        <div class="flex space-x-6">
-          <a href="#" class="text-emerald-100 hover:text-white text-sm transition">Privacy Policy</a>
-          <a href="#" class="text-emerald-100 hover:text-white text-sm transition">Terms of Service</a>
-          <a href="#" class="text-emerald-100 hover:text-white text-sm transition">Sitemap</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Meet the Developer Modal -->
-  <div id="dev-modal-overlay"
-       class="dev-modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center px-4"
-       onclick="if (event.target === this) closeDevModal()">
-    <div class="dev-modal-card bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
-      <button type="button" onclick="closeDevModal()"
-              class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Close">
-        <i class="fas fa-times text-lg"></i>
-      </button>
-      <div class="flex flex-col items-center text-center">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Supervised by</p>
-        <img src="https://i.postimg.cc/XYVLww8d/10005.jpg" alt="Dr. Mahmudul Alam"
-             class="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100 mb-3">
-        <a href="https://jstu.ac.bd/index.php/profile/emp_profile/10005" target="_blank" rel="noopener noreferrer"
-           class="text-lg font-bold text-gray-800 hover:text-emerald-600">
-          Dr. Mahmudul Alam
-        </a>
-        <p class="text-sm text-gray-500 mt-1">Assistant Professor</p>
-        <p class="text-sm text-gray-500 mt-1">JSTU, Jamalpur</p>
-        <a href="mailto:mahmudul@jstu.ac.bd"
-           class="mt-3 inline-flex items-center gap-2 text-emerald-600 font-medium hover:text-emerald-700">
-          <i class="fas fa-envelope"></i> mahmudul@jstu.ac.bd
-        </a>
-      </div>
-
-      <div class="border-t border-gray-100 mt-6 pt-6 flex flex-col items-center text-center">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Coded by</p>
-        <img src="https://i.postimg.cc/26PL2DNK/img-Himel.jpg" alt="Himel Sarder"
-             class="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100 mb-4">
-        <h3 class="text-xl font-bold text-gray-800">Himel Sarder</h3>
-        <p class="text-sm text-gray-500 mt-1">Dept of CSE, JSTU</p>
-        <p class="text-sm text-gray-500 mt-1">Session: 2021-22</p>
-        <a href="mailto:info.himelcse@gmail.com"
-           class="mt-4 inline-flex items-center gap-2 text-emerald-600 font-medium hover:text-emerald-700">
-          <i class="fas fa-envelope"></i> info.himelcse@gmail.com
-        </a>
-      </div>
-    </div>
-  </div>
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tiro+Bangla&display=swap" rel="stylesheet">
   <script>
-    // Mobile menu toggle functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const hamburger = document.querySelector('.hamburger');
-      const mobileMenu = document.querySelector('.mobile-menu');
-      
-      hamburger.addEventListener('click', function() {
-        mobileMenu.classList.toggle('open');
-        
-        // Change hamburger icon
-        const icon = hamburger.querySelector('i');
-        if (icon.classList.contains('fa-bars')) {
-          icon.classList.remove('fa-bars');
-          icon.classList.add('fa-times');
-        } else {
-          icon.classList.remove('fa-times');
-          icon.classList.add('fa-bars');
-        }
-      });
-      
-      // Close mobile menu when a link is clicked
-      const mobileLinks = document.querySelectorAll('.mobile-menu a');
-      mobileLinks.forEach(link => {
-        link.addEventListener('click', function() {
-          mobileMenu.classList.remove('open');
-          const icon = hamburger.querySelector('i');
-          icon.classList.remove('fa-times');
-          icon.classList.add('fa-bars');
-        });
-      });
-      
-      // Set active link based on current URL path
-      const currentPath = window.location.pathname;
-      const navLinks = document.querySelectorAll('.nav-link');
-      
-      navLinks.forEach(link => {
-        // Get the URL path from the href attribute
-        const linkUrl = new URL(link.href, window.location.origin);
-        if (linkUrl.pathname === currentPath) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
-      });
-
-      // Close the developer modal on Escape
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeDevModal();
-      });
-    });
-
-    function openDevModal() {
-      document.getElementById('dev-modal-overlay').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeDevModal() {
-      document.getElementById('dev-modal-overlay').classList.add('hidden');
-      document.body.style.overflow = '';
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
+            bangla: ['Tiro Bangla', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7',
+              400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857',
+              800: '#065f46', 900: '#064e3b',
+            },
+          },
+          boxShadow: {
+            card: '0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -12px rgba(15, 23, 42, .12)',
+            lift: '0 12px 32px -12px rgba(5, 150, 105, .35)',
+          },
+        },
+      },
     }
   </script>
+  <style>
+    :root {
+      --sidebar-w: 260px;
+    }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .bn { font-family: 'Tiro Bangla', 'Inter', serif; }
+
+    /* ---- App shell ---- */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: linear-gradient(180deg, #064e3b 0%, #065f46 45%, #047857 100%);
+    }
+    @media (max-width: 1023px) {
+      .sidebar {
+        position: fixed; inset: 0 auto 0 0; z-index: 60;
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .625rem .875rem; border-radius: .625rem;
+      color: rgba(255,255,255,.78); font-size: .9rem; font-weight: 500;
+      transition: background .18s ease, color .18s ease;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.10); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,.16); color: #fff; font-weight: 600; }
+    .nav-item i { width: 1.15rem; text-align: center; font-size: .95rem; }
+
+    /* ---- Reusable pieces ---- */
+    .card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
+      box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -14px rgba(15,23,42,.14);
+    }
+    .card-pad { padding: 1.5rem; }
+    .section-title {
+      font-size: 1rem; font-weight: 700; color: #0f172a;
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .muted { color: #64748b; font-size: .85rem; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      padding: .625rem 1.1rem; border-radius: .625rem; font-weight: 600; font-size: .875rem;
+      cursor: pointer; border: 1px solid transparent; transition: all .18s ease;
+      text-decoration: none; white-space: nowrap;
+    }
+    .btn-primary { background: #059669; color: #fff; }
+    .btn-primary:hover { background: #047857; box-shadow: 0 10px 20px -10px rgba(5,150,105,.7); }
+    .btn-blue { background: #2563eb; color: #fff; }
+    .btn-blue:hover { background: #1d4ed8; }
+    .btn-amber { background: #d97706; color: #fff; }
+    .btn-amber:hover { background: #b45309; }
+    .btn-danger { background: #fff; color: #b91c1c; border-color: #fecaca; }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-ghost { background: #fff; color: #334155; border-color: #cbd5e1; }
+    .btn-ghost:hover { background: #f8fafc; border-color: #94a3b8; }
+    .btn-sm { padding: .4rem .75rem; font-size: .8rem; border-radius: .5rem; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .2rem .6rem; border-radius: 999px;
+      font-size: .72rem; font-weight: 700; letter-spacing: .01em;
+    }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-blue  { background: #dbeafe; color: #1e40af; }
+    .badge-slate { background: #e2e8f0; color: #334155; }
+    .badge-red   { background: #fee2e2; color: #991b1b; }
+
+    .form-input, input[type="text"].form-input, select.form-input {
+      width: 100%; padding: .6rem .75rem; font-size: .875rem;
+      border: 1px solid #cbd5e1; border-radius: .5rem; background: #f8fafc;
+      color: #0f172a; transition: all .18s ease;
+    }
+    .form-input:focus {
+      outline: none; background: #fff; border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,.16);
+    }
+    select.form-input {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat; background-position: right .7rem center;
+      background-size: 1rem; padding-right: 2.25rem;
+    }
+    .field-label {
+      display: block; font-size: .78rem; font-weight: 600; color: #475569;
+      margin-bottom: .3rem; letter-spacing: .01em;
+    }
+
+    /* ---- Doctor-call alert (reception) ---- */
+    #call-alert-stack {
+      position: fixed; top: 1rem; right: 1rem; z-index: 90;
+      display: flex; flex-direction: column; gap: .75rem; max-width: 22rem; width: calc(100% - 2rem);
+    }
+    .call-alert {
+      background: #fff; border: 1px solid #fcd34d; border-left: 5px solid #f59e0b;
+      border-radius: .85rem; padding: 1rem; box-shadow: 0 18px 40px -18px rgba(15,23,42,.5);
+      animation: alert-in .3s ease-out;
+    }
+    .call-alert.ringing { animation: alert-in .3s ease-out, alert-pulse 1s ease-in-out 3; }
+    @keyframes alert-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+    @keyframes alert-pulse {
+      0%, 100% { box-shadow: 0 18px 40px -18px rgba(15,23,42,.5); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,.28), 0 18px 40px -18px rgba(15,23,42,.5); }
+    }
+    .bell-shake { animation: bell-shake .8s ease-in-out infinite; transform-origin: top center; }
+    @keyframes bell-shake {
+      0%, 100% { transform: rotate(0); }
+      20% { transform: rotate(14deg); }
+      40% { transform: rotate(-12deg); }
+      60% { transform: rotate(8deg); }
+      80% { transform: rotate(-6deg); }
+    }
+
+    /* ---- Messages ---- */
+    .flash {
+      display: flex; align-items: flex-start; gap: .75rem;
+      padding: .8rem 1rem; border-radius: .75rem; font-size: .875rem; font-weight: 500;
+      border: 1px solid transparent;
+    }
+    .flash-success { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .flash-error   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .flash-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .flash-info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+
+    .scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+
+    @media print {
+      .sidebar, .topbar, #call-alert-stack, .no-print, footer { display: none !important; }
+      body { background: #fff; }
+      .app-main { margin: 0 !important; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen">
+
+{% if user.is_authenticated %}
+<div class="flex min-h-screen">
+
+  <!-- ================= Sidebar ================= -->
+  <aside id="sidebar" class="sidebar flex-shrink-0 flex flex-col">
+    <div class="px-5 py-5 flex items-center gap-3 border-b border-white/10">
+      <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="leading-tight">
+        <div class="text-lg font-extrabold text-white tracking-tight">
+          Multi<span class="text-emerald-300">Rx</span>
+        </div>
+        <div class="text-[11px] uppercase tracking-widest text-emerald-200/80 font-semibold">
+          {% if user.is_admin %}Admin Panel
+          {% elif user.is_receptionist %}Reception Desk
+          {% else %}Doctor Console{% endif %}
+        </div>
+      </div>
+      <button type="button" onclick="toggleSidebar()" class="ml-auto lg:hidden text-white/70 hover:text-white">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scroll-thin">
+      {% if user.is_admin %}
+        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200/60">Administration</p>
+        <a href="{% url 'admin_dashboard' %}" class="nav-item" data-match="/manage/"><i class="fas fa-gauge-high"></i> Overview</a>
+        <a href="{% url 'admin_accounts' %}" class="nav-item" data-match="/manage/accounts/"><i class="fas fa-users-gear"></i> Accounts</a>
+        <a href="{% url 'admin_appointments' %}" class="nav-item" data-match="/manage/appointments/"><i class="fas fa-calendar-days"></i> All Appointments</a>
+
+        <p class="px-3 pt-5 pb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200/60">Clinic Data</p>
+        <a href="{% url 'search' %}" class="nav-item" data-match="/patients/"><i class="fas fa-users"></i> All Patients</a>
+        <a href="{% url 'analysis' %}" class="nav-item" data-match="/analysis/"><i class="fas fa-chart-pie"></i> Analysis</a>
+        <a href="/admin/" class="nav-item" target="_blank" rel="noopener"><i class="fas fa-database"></i> Django Admin</a>
+      {% elif user.is_receptionist %}
+        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200/60">Reception</p>
+        <a href="{% url 'reception_dashboard' %}" class="nav-item" data-match="/reception/"><i class="fas fa-house"></i> Home</a>
+        <a href="{% url 'reception_new_patient' %}" class="nav-item" data-match="/reception/new-patient/"><i class="fas fa-user-plus"></i> New Patient</a>
+        <a href="{% url 'reception_appointments' %}" class="nav-item" data-match="/reception/appointments/">
+          <i class="fas fa-calendar-check"></i> Appointments
+          <span id="nav-waiting-badge" class="ml-auto badge badge-amber hidden">0</span>
+        </a>
+        <a href="{% url 'search' %}" class="nav-item" data-match="/patients/"><i class="fas fa-users"></i> Existing Patients</a>
+        <a href="{% url 'analysis' %}" class="nav-item" data-match="/analysis/"><i class="fas fa-chart-pie"></i> Analysis</a>
+      {% else %}
+        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200/60">Clinic</p>
+        <a href="{% url 'doctor_dashboard' %}" class="nav-item" data-match="/doctor/"><i class="fas fa-house"></i> Home</a>
+        <a href="{% url 'doctor_appointments' %}" class="nav-item" data-match="/doctor/appointments/">
+          <i class="fas fa-calendar-check"></i> Appointments
+          <span id="nav-waiting-badge" class="ml-auto badge badge-amber hidden">0</span>
+        </a>
+        <a href="{% url 'prescribe' %}" class="nav-item" data-match="/prescribe/"><i class="fas fa-file-prescription"></i> Prescribe</a>
+        <a href="{% url 'search' %}" class="nav-item" data-match="/patients/"><i class="fas fa-users"></i> Patients</a>
+        <a href="{% url 'analysis' %}" class="nav-item" data-match="/analysis/"><i class="fas fa-chart-pie"></i> Analysis</a>
+      {% endif %}
+
+      <p class="px-3 pt-5 pb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200/60">Account</p>
+      <a href="{% url 'profile' %}" class="nav-item" data-match="/profile/"><i class="fas fa-id-badge"></i> Profile</a>
+    </nav>
+
+    <div class="p-3 border-t border-white/10">
+      <div class="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5">
+        {% if user.profile_picture %}
+          <img src="{{ user.profile_picture.url }}" alt="" class="w-9 h-9 rounded-full object-cover ring-2 ring-white/25">
+        {% else %}
+          <div class="w-9 h-9 rounded-full bg-emerald-400/25 flex items-center justify-center text-white font-bold text-sm">
+            {{ user.doctor_id|slice:":2" }}
+          </div>
+        {% endif %}
+        <div class="min-w-0 leading-tight">
+          <p class="text-sm font-semibold text-white truncate">{{ user.display_name }}</p>
+          <p class="text-[11px] text-emerald-200/80">{{ user.doctor_id }}</p>
+        </div>
+      </div>
+      <a href="{% url 'logout' %}" class="nav-item mt-2"><i class="fas fa-arrow-right-from-bracket"></i> Sign out</a>
+    </div>
+  </aside>
+
+  <div id="sidebar-backdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/50 z-50 lg:hidden"></div>
+
+  <!-- ================= Main ================= -->
+  <div class="app-main flex-1 min-w-0 flex flex-col">
+    <header class="topbar sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200">
+      <div class="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center gap-4">
+        <button type="button" onclick="toggleSidebar()" class="lg:hidden text-slate-600 hover:text-slate-900">
+          <i class="fas fa-bars text-lg"></i>
+        </button>
+        <div class="min-w-0">
+          <h1 class="text-lg sm:text-xl font-bold text-slate-900 truncate">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="text-xs text-slate-500 truncate">{% block page_subtitle %}{% endblock %}</p>
+        </div>
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          {% block actions %}{% endblock %}
+          <span class="hidden md:inline-flex badge
+            {% if user.is_admin %}badge-slate{% elif user.is_receptionist %}badge-blue{% else %}badge-green{% endif %}">
+            <i class="fas {% if user.is_admin %}fa-shield-halved{% elif user.is_receptionist %}fa-headset{% else %}fa-user-doctor{% endif %}"></i>
+            {{ user.role_label }}
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 sm:px-6 lg:px-8 py-6">
+      {% if messages %}
+        <div class="space-y-2 mb-5 no-print">
+          {% for message in messages %}
+            <div class="flash flash-{{ message.tags|default:'info' }}">
+              <i class="fas
+                {% if message.tags == 'success' %}fa-circle-check
+                {% elif message.tags == 'error' %}fa-circle-exclamation
+                {% elif message.tags == 'warning' %}fa-triangle-exclamation
+                {% else %}fa-circle-info{% endif %} mt-0.5"></i>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="px-4 sm:px-6 lg:px-8 py-5 border-t border-slate-200 bg-white">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+        <p>&copy; {% now "Y" %} MultiRx · Prescription &amp; Patient Management, JSTU</p>
+        <button type="button" onclick="openDevModal()" class="font-semibold text-emerald-700 hover:text-emerald-800">
+          <i class="fas fa-user-circle mr-1"></i> Meet the Developers
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+{% else %}
+  {# Signed-out pages (landing + login) render standalone #}
+  {% block public_content %}{% endblock %}
+{% endif %}
+
+<!-- Doctor-call alerts land here (reception only) -->
+<div id="call-alert-stack"></div>
+
+<!-- Meet the Developer Modal -->
+<div id="dev-modal-overlay"
+     class="hidden fixed inset-0 z-[100] items-center justify-center px-4 bg-emerald-950/60 backdrop-blur-sm"
+     onclick="if (event.target === this) closeDevModal()">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative max-h-[90vh] overflow-y-auto scroll-thin">
+    <button type="button" onclick="closeDevModal()"
+            class="absolute top-3 right-3 text-slate-400 hover:text-slate-600" aria-label="Close">
+      <i class="fas fa-times text-lg"></i>
+    </button>
+    <div class="flex flex-col items-center text-center">
+      <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Supervised by</p>
+      <img src="https://i.postimg.cc/XYVLww8d/10005.jpg" alt="Dr. Mahmudul Alam"
+           class="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100 mb-3">
+      <a href="https://jstu.ac.bd/index.php/profile/emp_profile/10005" target="_blank" rel="noopener noreferrer"
+         class="text-lg font-bold text-slate-800 hover:text-emerald-600">Dr. Mahmudul Alam</a>
+      <p class="text-sm text-slate-500 mt-1">Assistant Professor</p>
+      <p class="text-sm text-slate-500">JSTU, Jamalpur</p>
+      <a href="mailto:mahmudul@jstu.ac.bd" class="mt-3 inline-flex items-center gap-2 text-emerald-600 font-medium hover:text-emerald-700">
+        <i class="fas fa-envelope"></i> mahmudul@jstu.ac.bd
+      </a>
+    </div>
+    <div class="border-t border-slate-100 mt-6 pt-6 flex flex-col items-center text-center">
+      <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Coded by</p>
+      <img src="https://i.postimg.cc/26PL2DNK/img-Himel.jpg" alt="Himel Sarder"
+           class="w-24 h-24 rounded-full object-cover ring-4 ring-emerald-100 mb-4">
+      <h3 class="text-xl font-bold text-slate-800">Himel Sarder</h3>
+      <p class="text-sm text-slate-500 mt-1">Dept of CSE, JSTU · Session 2021-22</p>
+      <a href="mailto:info.himelcse@gmail.com" class="mt-4 inline-flex items-center gap-2 text-emerald-600 font-medium hover:text-emerald-700">
+        <i class="fas fa-envelope"></i> info.himelcse@gmail.com
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    const bd = document.getElementById('sidebar-backdrop');
+    if (!sb) return;
+    sb.classList.toggle('open');
+    bd.classList.toggle('hidden');
+  }
+
+  function openDevModal() {
+    const m = document.getElementById('dev-modal-overlay');
+    m.classList.remove('hidden'); m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDevModal() {
+    const m = document.getElementById('dev-modal-overlay');
+    m.classList.add('hidden'); m.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  // Highlight the sidebar entry matching the deepest path prefix.
+  document.addEventListener('DOMContentLoaded', function () {
+    const path = window.location.pathname;
+    let best = null, bestLen = -1;
+    document.querySelectorAll('.nav-item[data-match]').forEach(function (link) {
+      const match = link.dataset.match;
+      if (path === match || (path.startsWith(match) && match.length > 1)) {
+        if (match.length > bestLen) { best = link; bestLen = match.length; }
+      }
+    });
+    if (best) best.classList.add('active');
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDevModal();
+    });
+  });
+</script>
+
+{% if user.is_authenticated and not user.is_admin %}
+<script>
+/* ------------------------------------------------------------------
+ * Live queue link between the doctor console and the reception desk.
+ * The doctor's "Next Patient" button creates a call; reception polls
+ * for it, rings a 3-second bell and shows a "Send Next Patient" card.
+ * ------------------------------------------------------------------ */
+(function () {
+  const IS_RECEPTION = {{ user.is_receptionist|yesno:"true,false" }};
+  const POLL_MS = 3000;
+  const CSRF = '{{ csrf_token }}';
+
+  /* ---------- 3-second chime, synthesised so no audio file is needed ---------- */
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      audioCtx = new Ctor();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  // Browsers only allow sound after a user gesture; arm the context on the first one.
+  ['pointerdown', 'keydown'].forEach(function (evt) {
+    window.addEventListener(evt, function armAudio() {
+      ensureAudio();
+      window.removeEventListener(evt, armAudio);
+    }, { once: true });
+  });
+
+  function playBell() {
+    const ctx = ensureAudio();
+    if (!ctx || ctx.state !== 'running') return false;
+
+    const start = ctx.currentTime;
+    // Six ding-dong strikes at 0.5s apart -> exactly 3 seconds of ringing.
+    for (let i = 0; i < 6; i++) {
+      const at = start + i * 0.5;
+      [880, 1174.66].forEach(function (freq, idx) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, at + idx * 0.12);
+        gain.gain.setValueAtTime(0.0001, at + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.35, at + idx * 0.12 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + idx * 0.12 + 0.32);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(at + idx * 0.12);
+        osc.stop(at + idx * 0.12 + 0.35);
+      });
+    }
+    return true;
+  }
+
+  /* ---------- Reception: poll for calls, ring, offer "Send Next" ---------- */
+  function receptionPoll() {
+    fetch("{% url 'reception_queue_state' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { if (data) renderReception(data); })
+      .catch(function () { /* transient network hiccup - try again next tick */ });
+  }
+
+  const rungCallIds = new Set();
+  const stack = document.getElementById('call-alert-stack');
+
+  function renderReception(data) {
+    // Keep the sidebar badge in sync with the total number waiting.
+    const totalWaiting = (data.board || []).reduce(function (sum, b) { return sum + b.waiting; }, 0);
+    const badge = document.getElementById('nav-waiting-badge');
+    if (badge) {
+      badge.textContent = totalWaiting;
+      badge.classList.toggle('hidden', totalWaiting === 0);
+    }
+
+    const live = new Set((data.calls || []).map(function (c) { return String(c.id); }));
+
+    // Drop cards for calls that were answered elsewhere.
+    Array.from(stack.children).forEach(function (node) {
+      if (!live.has(node.dataset.callId)) node.remove();
+    });
+
+    (data.calls || []).forEach(function (call) {
+      if (document.querySelector('[data-call-id="' + call.id + '"]')) return;
+      stack.appendChild(buildAlert(call));
+      if (!rungCallIds.has(call.id)) {
+        rungCallIds.add(call.id);
+        const rang = playBell();
+        if (!rang) showSoundHint();
+        if (document.title.indexOf('🔔') !== 0) document.title = '🔔 ' + document.title;
+      }
+    });
+
+    if (!live.size && document.title.indexOf('🔔') === 0) {
+      document.title = document.title.slice(2).trim();
+    }
+
+    document.dispatchEvent(new CustomEvent('reception:update', { detail: data }));
+  }
+
+  function buildAlert(call) {
+    const card = document.createElement('div');
+    card.className = 'call-alert ringing';
+    card.dataset.callId = call.id;
+
+    const finished = call.finished_patient
+      ? '<p class="text-xs text-slate-500 mt-1">Finished with #' + call.finished_serial +
+        ' · ' + escapeHtml(call.finished_patient) + '</p>'
+      : '';
+
+    const waitingLine = call.waiting > 0
+      ? '<p class="text-xs text-slate-500 mt-1">' + call.waiting + ' patient(s) waiting</p>'
+      : '<p class="text-xs text-red-600 font-semibold mt-1">No one is waiting</p>';
+
+    card.innerHTML =
+      '<div class="flex items-start gap-3">' +
+        '<div class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">' +
+          '<i class="fas fa-bell bell-shake"></i>' +
+        '</div>' +
+        '<div class="min-w-0 flex-1">' +
+          '<p class="text-sm font-bold text-slate-900">Ready for the next patient</p>' +
+          '<p class="text-xs text-slate-600">' + escapeHtml(call.doctor) + ' · ' + call.created_at + '</p>' +
+          finished + waitingLine +
+          '<div class="flex gap-2 mt-3">' +
+            '<form method="post" action="{% url 'reception_send_next' %}" class="flex-1">' +
+              '<input type="hidden" name="csrfmiddlewaretoken" value="' + CSRF + '">' +
+              '<input type="hidden" name="doctor_id" value="' + call.doctor_id + '">' +
+              '<button type="submit" class="btn btn-primary btn-sm w-full">' +
+                '<i class="fas fa-paper-plane"></i> Send Next Patient</button>' +
+            '</form>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-dismiss="' + call.doctor_id + '">Later</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    card.querySelector('[data-dismiss]').addEventListener('click', function () {
+      const body = new URLSearchParams({ csrfmiddlewaretoken: CSRF, doctor_id: call.doctor_id });
+      fetch("{% url 'reception_dismiss_calls' %}", { method: 'POST', body: body })
+        .then(function () { card.remove(); });
+    });
+    return card;
+  }
+
+  function showSoundHint() {
+    if (document.getElementById('sound-hint')) return;
+    const hint = document.createElement('div');
+    hint.id = 'sound-hint';
+    hint.className = 'call-alert';
+    hint.dataset.callId = 'sound-hint';
+    hint.innerHTML =
+      '<p class="text-sm font-semibold text-slate-800">' +
+      '<i class="fas fa-volume-xmark text-amber-600 mr-1"></i> Sound is blocked</p>' +
+      '<p class="text-xs text-slate-600 mt-1">Click anywhere on this page once to let the browser play the call bell.</p>';
+    stack.appendChild(hint);
+    window.addEventListener('pointerdown', function () {
+      ensureAudio();
+      const n = document.getElementById('sound-hint');
+      if (n) n.remove();
+    }, { once: true });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : str;
+    return d.innerHTML;
+  }
+
+  /* ---------- Doctor: keep the waiting badge live ---------- */
+  function doctorPoll() {
+    fetch("{% url 'doctor_queue_state' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        const badge = document.getElementById('nav-waiting-badge');
+        if (badge) {
+          badge.textContent = data.waiting_count;
+          badge.classList.toggle('hidden', data.waiting_count === 0);
+        }
+        document.dispatchEvent(new CustomEvent('queue:update', { detail: data }));
+      })
+      .catch(function () {});
+  }
+
+  const poll = IS_RECEPTION ? receptionPoll : doctorPoll;
+  poll();
+  setInterval(function () {
+    if (document.visibilityState !== 'hidden') poll();
+  }, POLL_MS);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') poll();
+  });
+})();
+</script>
+{% endif %}
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>

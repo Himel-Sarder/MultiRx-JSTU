@@ -1,353 +1,412 @@
 {% extends 'app/base.html' %}
 {% load custom_filters %}
+{% block title %}{{ patient.name }}{% endblock %}
+{% block page_title %}{{ patient.name }}{% endblock %}
+{% block page_subtitle %}P{{ patient_id_formatted }} · registered {{ patient.created_at|date:"j M Y" }}{% endblock %}
+
+{% block actions %}
+  {% if user.is_doctor %}
+    <a href="{% url 'prescribe_with_patient' patient.id %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-file-prescription"></i> <span class="hidden sm:inline">Prescribe</span>
+    </a>
+  {% else %}
+    <a href="{% url 'reception_edit_patient' patient.id %}" class="btn btn-ghost btn-sm">
+      <i class="fas fa-pen"></i> <span class="hidden sm:inline">Edit</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tab-btn {
+    padding: .7rem .25rem; font-size: .875rem; font-weight: 600; color: #64748b;
+    border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap;
+  }
+  .tab-btn:hover { color: #0f172a; }
+  .tab-btn.active { color: #047857; border-color: #047857; }
+  .kv { display: flex; flex-direction: column; gap: .1rem; }
+  .kv dt { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; font-weight: 700; }
+  .kv dd { font-size: .875rem; color: #0f172a; font-weight: 600; }
+  .rx-item { border: 1px solid #e2e8f0; border-radius: .85rem; overflow: hidden; }
+  .rx-item summary { cursor: pointer; list-style: none; }
+  .rx-item summary::-webkit-details-marker { display: none; }
+</style>
+{% endblock %}
+
 {% block content %}
-<style>
-  body {
-    background-image: linear-gradient(rgba(240, 255, 240, 0.6), rgba(240, 255, 240, 0.56)),
-                     url('https://i.postimg.cc/YC8nFr9f/8.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-  }
-</style>
+<div class="space-y-5">
 
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-white bg-opacity-90 rounded-lg shadow-lg">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
-    <div>
-      <h2 class="text-3xl font-bold text-gray-800 mb-1">{{ patient.name }}</h2>
-      <p class="text-sm text-gray-600">
-        <i class="fas fa-user mr-1"></i> Age: {{ patient.age }} &nbsp;
-        <i class="fas fa-venus-mars mr-1"></i> {{ patient.gender }} &nbsp;
-        <i class="fas fa-map-marker-alt mr-1"></i> {{ patient.address }}
-      </p>
-    </div>
-    <div class="flex space-x-3">
-      <a href="{% url 'prescribe_with_patient' patient.id %}" 
-        class="px-4 py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 text-sm">
-        <i class="fas fa-file-medical mr-1"></i> Create Another Prescription
-      </a>
-      <a href="{% url 'delete_patient' patient.id %}" class="px-4 py-2 border border-red-600 text-red-600 rounded hover:bg-red-50 text-sm">
-        <i class="fas fa-trash mr-1"></i> Delete Patient
-      </a>
-    </div>
-  </div>
-
-  <!-- Additional Patient Record (profile section: everything the doctor entered on the research-data form) -->
-  {% if latest_research_data %}
-  {% with rd=latest_research_data %}
-  <div class="mt-2 bg-gray-100 p-4 rounded-lg">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-lg font-semibold text-gray-700">
-        <i class="fas fa-notes-medical text-green-600 mr-2"></i>Additional Patient Record
-      </h3>
-      <a href="{% url 'research_data' rd.prescription_id %}" class="text-blue-600 hover:underline text-sm">
-        <i class="fas fa-pen mr-1"></i>Edit
-      </a>
-    </div>
-
-    <!-- Vitals: BMI is auto-calculated from weight & height -->
-    {% if rd.bmi or rd.weight or rd.height %}
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-      <div class="bg-white rounded-lg p-3 text-center border">
-        <div class="text-xs text-gray-500 uppercase">Weight</div>
-        <div class="text-base font-semibold text-gray-800">{{ rd.weight|default:"-" }}{% if rd.weight %} kg{% endif %}</div>
+  <!-- Identity card -->
+  <div class="card overflow-hidden">
+    <div class="px-6 py-6 flex flex-wrap items-center gap-5">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 text-2xl font-extrabold flex items-center justify-center flex-shrink-0">
+        {{ patient.name|slice:":1"|upper }}
       </div>
-      <div class="bg-white rounded-lg p-3 text-center border">
-        <div class="text-xs text-gray-500 uppercase">Height</div>
-        <div class="text-base font-semibold text-gray-800">{{ rd.height|default:"-" }}{% if rd.height %} cm{% endif %}</div>
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold text-slate-900 truncate">{{ patient.name }}</h2>
+        <p class="text-sm text-slate-500 mt-0.5">
+          {{ patient.age }} years · {{ patient.gender }}
+          {% if patient.phone %} · <i class="fas fa-phone text-xs"></i> {{ patient.phone }}{% endif %}
+        </p>
+        <p class="text-sm text-slate-500"><i class="fas fa-location-dot text-xs"></i> {{ patient.address }}</p>
       </div>
-      <div class="bg-white rounded-lg p-3 text-center border col-span-2 sm:col-span-1">
-        <div class="text-xs text-gray-500 uppercase">BMI (auto)</div>
-        <div class="text-base font-semibold text-green-700">{{ rd.bmi|default:"-" }}</div>
-      </div>
-      <div class="bg-white rounded-lg p-3 text-center border">
-        <div class="text-xs text-gray-500 uppercase">Smoking</div>
-        <div class="text-base font-semibold text-gray-800">{{ rd.smoking_status|default:"-" }}</div>
+      <div class="flex flex-col items-start sm:items-end gap-2">
+        <span class="badge badge-slate">P{{ patient_id_formatted }}</span>
+        <span class="text-xs text-slate-500">
+          Under {{ patient.doctor.display_name }}
+        </span>
+        {% if active_appointment %}
+          <span class="badge {% if active_appointment.status == 'in_consultation' %}badge-green{% else %}badge-amber{% endif %}">
+            Serial #{{ active_appointment.serial|stringformat:"02d" }} · {{ active_appointment.status_label }}
+          </span>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-      <!-- Education / Social -->
-      {% if rd.education_level or rd.monthly_income or rd.employment_status %}
-      <div>
-        <div class="font-semibold text-gray-600 mb-1">Education / Social</div>
-        <ul class="space-y-0.5">
-          {% if rd.education_level %}<li>Education: {{ rd.education_level }}</li>{% endif %}
-          {% if rd.employment_status %}<li>Employment: {{ rd.employment_status }}</li>{% endif %}
-          {% if rd.monthly_income %}<li>Monthly Income: {{ rd.monthly_income }}</li>{% endif %}
-        </ul>
+    <div class="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-200 divide-x divide-slate-200">
+      <div class="px-5 py-3">
+        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Prescriptions</p>
+        <p class="text-xl font-extrabold text-slate-900">{{ prescriptions|length }}</p>
       </div>
-      {% endif %}
-
-      <!-- Clinical History -->
-      {% if rd.diagnosis or rd.comorbidities_list %}
-      <div>
-        <div class="font-semibold text-gray-600 mb-1">Clinical History</div>
-        <ul class="space-y-0.5">
-          {% if rd.diagnosis %}<li>Diagnosis: {{ rd.diagnosis }}</li>{% endif %}
-          {% if rd.comorbidities_list %}<li>Comorbidities: {{ rd.comorbidities_list|join:", " }}</li>{% endif %}
-        </ul>
+      <div class="px-5 py-3">
+        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Visits</p>
+        <p class="text-xl font-extrabold text-slate-900">{{ appointments|length }}</p>
       </div>
-      {% endif %}
-
-      <!-- Laboratory Values -->
-      {% if rd.serum_creatinine or rd.cystatin_c or rd.egfr or rd.uacr or rd.protein_levels or rd.hemoglobin or rd.ferritin or rd.calcium or rd.phosphorus or rd.pth or rd.potassium or rd.bicarbonate or rd.serum_albumin or rd.crp or rd.total_cholesterol or rd.hba1c %}
-      <div>
-        <div class="font-semibold text-gray-600 mb-1">Laboratory Values</div>
-        <ul class="space-y-0.5">
-          {% if rd.serum_creatinine %}<li>Serum Creatinine: {{ rd.serum_creatinine }}</li>{% endif %}
-          {% if rd.cystatin_c %}<li>Cystatin C: {{ rd.cystatin_c }}</li>{% endif %}
-          {% if rd.egfr %}<li>eGFR: {{ rd.egfr }}</li>{% endif %}
-          {% if rd.uacr %}<li>uACR: {{ rd.uacr }}</li>{% endif %}
-          {% if rd.protein_levels %}<li>Protein Levels: {{ rd.protein_levels }}</li>{% endif %}
-          {% if rd.hemoglobin %}<li>Hemoglobin: {{ rd.hemoglobin }}</li>{% endif %}
-          {% if rd.ferritin %}<li>Ferritin: {{ rd.ferritin }}</li>{% endif %}
-          {% if rd.calcium %}<li>Calcium: {{ rd.calcium }}</li>{% endif %}
-          {% if rd.phosphorus %}<li>Phosphorus: {{ rd.phosphorus }}</li>{% endif %}
-          {% if rd.pth %}<li>PTH: {{ rd.pth }}</li>{% endif %}
-          {% if rd.potassium %}<li>Potassium: {{ rd.potassium }}</li>{% endif %}
-          {% if rd.bicarbonate %}<li>Bicarbonate: {{ rd.bicarbonate }}</li>{% endif %}
-          {% if rd.serum_albumin %}<li>Serum Albumin: {{ rd.serum_albumin }}</li>{% endif %}
-          {% if rd.crp %}<li>CRP: {{ rd.crp }}</li>{% endif %}
-          {% if rd.total_cholesterol %}<li>Total Cholesterol: {{ rd.total_cholesterol }}</li>{% endif %}
-          {% if rd.hba1c %}<li>HbA1c: {{ rd.hba1c }}</li>{% endif %}
-        </ul>
+      <div class="px-5 py-3">
+        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Registered</p>
+        <p class="text-sm font-semibold text-slate-900 pt-1">{{ patient.created_at|date:"j M Y" }}</p>
       </div>
-      {% endif %}
-
-      <!-- KRT Data -->
-      {% if rd.krt_modality or rd.krt_initiation_date or rd.modality_change_dates or rd.transplant_date or rd.dialysis_duration or rd.dialysis_frequency or rd.vascular_access_type %}
-      <div>
-        <div class="font-semibold text-gray-600 mb-1">Kidney Replacement Therapy (KRT)</div>
-        <ul class="space-y-0.5">
-          {% if rd.krt_modality %}<li>Modality: {{ rd.krt_modality }}</li>{% endif %}
-          {% if rd.krt_initiation_date %}<li>KRT Initiation Date: {{ rd.krt_initiation_date }}</li>{% endif %}
-          {% if rd.modality_change_dates %}<li>Modality Change Dates: {{ rd.modality_change_dates }}</li>{% endif %}
-          {% if rd.transplant_date %}<li>Transplant Date: {{ rd.transplant_date }}</li>{% endif %}
-          {% if rd.dialysis_duration %}<li>Dialysis Duration: {{ rd.dialysis_duration }}</li>{% endif %}
-          {% if rd.dialysis_frequency %}<li>Dialysis Frequency: {{ rd.dialysis_frequency }}</li>{% endif %}
-          {% if rd.vascular_access_type %}<li>Vascular Access: {{ rd.vascular_access_type }}</li>{% endif %}
-        </ul>
+      <div class="px-5 py-3">
+        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Record</p>
+        <p class="text-sm font-semibold pt-1 {% if research_data %}text-emerald-700{% else %}text-amber-600{% endif %}">
+          {% if research_data %}Complete{% else %}Not filled{% endif %}
+        </p>
       </div>
-      {% endif %}
-
-      <!-- Medication Data -->
-      {% if rd.kidney_medications_list or rd.cardiovascular_medications_list %}
-      <div class="md:col-span-2">
-        <div class="font-semibold text-gray-600 mb-1">Medication History</div>
-        <ul class="space-y-0.5">
-          {% if rd.kidney_medications_list %}<li>Kidney-related: {{ rd.kidney_medications_list|join:", " }}</li>{% endif %}
-          {% if rd.cardiovascular_medications_list %}<li>Cardiovascular/Other: {{ rd.cardiovascular_medications_list|join:", " }}</li>{% endif %}
-        </ul>
-      </div>
-      {% endif %}
     </div>
   </div>
-  {% endwith %}
-  {% endif %}
 
-    <!-- Prescription History -->
-  <div class="mt-8 bg-gray-100 p-4 rounded-lg">
-    <h3 class="text-lg font-semibold text-gray-700 mb-3"><i class="fas fa-prescription-bottle-alt text-green-600 mr-2"></i>Prescriptions</h3>
-    
-    <ul class="space-y-2 text-sm text-gray-700">
-      {% for prescription in patient.prescriptions.all %}
-        <li class="flex items-center justify-between border-b pb-1">
-          <span>{{ prescription.created_at|date:"Y-m-d H:i" }}</span>
-          <a href="{% url 'prescription_pdf' prescription.id %}" target="_blank" class="text-blue-600 hover:underline text-sm">
-            <i class="fas fa-file-pdf mr-1"></i>Download PDF
-          </a>
-        </li>
-      {% empty %}
-        <li>No prescriptions yet.</li>
-      {% endfor %}
-    </ul>
-  </div>
-
-  <!-- Problems Section -->
-<div class="bg-gray-100 p-4 rounded-lg">
-  <h4 class="font-semibold text-gray-700 mb-2">
-    <i class="fas fa-stethoscope mr-2 text-green-600"></i> Problems
-  </h4>
-  <div class="text-gray-600">
-    {% if problems %}
-      <ul class="list-disc pl-5">
-        {% for problem in problems %}
-          <li>{{ problem.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      -
-    {% endif %}
-  </div>
-</div>
-
-<!-- Examinations Section -->
-<div class="bg-gray-100 p-4 rounded-lg">
-  <h4 class="font-semibold text-gray-700 mb-2">
-    <i class="fas fa-clipboard-check mr-2 text-green-600"></i> Examinations
-  </h4>
-  <div class="text-gray-600">
-    {% if examinations %}
-      <ul class="list-disc pl-5">
-        {% for exam in examinations %}
-          <li>{{ exam.description }}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      -
-    {% endif %}
-  </div>
-</div>
-
-<!-- Reports Section -->
-<div class="bg-gray-100 p-4 rounded-lg">
-  <h4 class="font-semibold text-gray-700 mb-2">
-    <i class="fas fa-flask mr-2 text-green-600"></i> Reports
-  </h4>
-  <div class="text-gray-600">
-    {% if reports %}
-      {% for report in reports %}
-        <div class="mb-1 last:mb-0">
-          <span class="font-medium">{{ report.name }}</span>: {{ report.result }}
-        </div>
-      {% endfor %}
-    {% else %}
-      -
-    {% endif %}
-  </div>
-</div>
-
-<!-- Medicines Section -->
-<div class="bg-gray-100 p-4 rounded-lg">
-  <h4 class="font-semibold text-gray-700 mb-2">
-    <i class="fas fa-pills mr-2 text-green-600"></i> Medicines
-  </h4>
-
-  <div class="text-gray-600">
-    {% if medicines %}
-      {% for medicine in medicines %}
-        <div class="mb-2 last:mb-0">
-          <div class="font-medium">{{ medicine.name }} ({{ medicine.strength }})</div>
-
-          <div class="text-sm text-gray-500">
-            {{ medicine.frequency }} • {{ medicine.days|duration_bn }}
-            {% if medicine.remark %} • {{ medicine.remark }}{% endif %}
+  <!-- Reception: queue this patient -->
+  {% if user.is_receptionist %}
+    <div class="card card-pad">
+      <h2 class="section-title mb-4"><i class="fas fa-list-ol text-emerald-600"></i> Appointment</h2>
+      {% if active_appointment %}
+        <div class="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+          <span class="w-11 h-11 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center">
+            {{ active_appointment.serial|stringformat:"02d" }}
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-slate-900">
+              Already in today's queue — {{ active_appointment.status_label }}
+            </p>
+            <p class="text-xs text-slate-600">With {{ active_appointment.doctor.display_name }}</p>
           </div>
+          <a href="{% url 'reception_appointments' %}" class="btn btn-ghost btn-sm">Open board</a>
         </div>
-      {% endfor %}
-    {% else %}
-      -
-    {% endif %}
-  </div>
-</div>
+      {% else %}
+        <form method="post" action="{% url 'reception_queue_patient' patient.id %}"
+              class="flex flex-wrap items-end gap-3">
+          {% csrf_token %}
+          <div class="flex-1 min-w-[13rem]">
+            <label class="field-label" for="{{ queue_form.doctor.id_for_label }}">Doctor</label>
+            {{ queue_form.doctor }}
+          </div>
+          <div class="flex-1 min-w-[13rem]">
+            <label class="field-label" for="{{ queue_form.note.id_for_label }}">Note (optional)</label>
+            {{ queue_form.note }}
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-list-ol"></i> Give Serial</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
 
+  <!-- Tabs -->
+  <div class="card">
+    <div class="px-6 border-b border-slate-200 flex gap-6 overflow-x-auto scroll-thin">
+      <button type="button" class="tab-btn active" data-tab="record">Additional Record</button>
+      <button type="button" class="tab-btn" data-tab="prescriptions">Prescriptions ({{ prescriptions|length }})</button>
+      <button type="button" class="tab-btn" data-tab="visits">Visit History</button>
+    </div>
 
-<!-- Images Section -->
-{% if images %}
-<div class="mt-6">
-  <button onclick="toggleImages('image-block')" class="text-green-600 underline mb-2">
-    See Reports
-  </button>
-  <div id="image-block" class="hidden flex flex-wrap gap-3 mt-2">
-    {% for img in images %}
-      <img src="{{ img.image.url }}" alt="Report Image"
-           class="w-32 h-32 object-cover rounded border cursor-pointer hover:border-green-400"
-           onclick="openModal('{{ img.image.url }}')">
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-  <!-- Images -->
-  {% if patient.images.all %}
-  <div class="mt-6">
-    <button onclick="toggleImages('image-block')" class="text-green-600 underline mb-2">See Reports</button>
-    <div id="image-block" class="hidden flex flex-wrap gap-3 mt-2">
-      {% for img in patient.images.all %}
-      <img src="{{ img.image.url }}" alt="Image"
-           class="w-32 h-32 object-cover rounded border cursor-pointer hover:border-green-400"
-           onclick="openModal('{{ img.image.url }}')">
-      {% endfor %}
+    <!-- ===== Additional Patient Record ===== -->
+    <div class="tab-panel p-6" data-panel="record">
+      {% if research_data %}
+        <div class="space-y-7">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3">Education &amp; Social</p>
+            <dl class="grid sm:grid-cols-3 gap-5">
+              <div class="kv"><dt>Education</dt><dd>{{ research_data.education_level|default:"—" }}</dd></div>
+              <div class="kv"><dt>Monthly Income</dt><dd>{{ research_data.monthly_income|default:"—" }}</dd></div>
+              <div class="kv"><dt>Employment</dt><dd>{{ research_data.employment_status|default:"—" }}</dd></div>
+            </dl>
+          </div>
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3">Clinical History</p>
+            <dl class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div class="kv sm:col-span-2"><dt>Diagnosis</dt><dd>{{ research_data.diagnosis|default:"—" }}</dd></div>
+              <div class="kv"><dt>Smoking</dt><dd>{{ research_data.smoking_status|default:"—" }}</dd></div>
+              <div class="kv"><dt>BMI</dt><dd>{{ research_data.bmi|default:"—" }}</dd></div>
+              <div class="kv"><dt>Weight</dt><dd>{{ research_data.weight|default:"—" }}{% if research_data.weight %} kg{% endif %}</dd></div>
+              <div class="kv"><dt>Height</dt><dd>{{ research_data.height|default:"—" }}{% if research_data.height %} cm{% endif %}</dd></div>
+            </dl>
+            {% if research_data.comorbidities_list %}
+              <div class="mt-4">
+                <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Comorbidities</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {% for c in research_data.comorbidities_list %}<span class="badge badge-red">{{ c }}</span>{% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3">Laboratory &amp; Kidney Function</p>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-5">
+              <div class="kv"><dt>Creatinine</dt><dd>{{ research_data.serum_creatinine|default:"—" }}</dd></div>
+              <div class="kv"><dt>Cystatin C</dt><dd>{{ research_data.cystatin_c|default:"—" }}</dd></div>
+              <div class="kv"><dt>eGFR</dt><dd>{{ research_data.egfr|default:"—" }}</dd></div>
+              <div class="kv"><dt>uACR</dt><dd>{{ research_data.uacr|default:"—" }}</dd></div>
+              <div class="kv"><dt>Protein</dt><dd>{{ research_data.protein_levels|default:"—" }}</dd></div>
+              <div class="kv"><dt>Hemoglobin</dt><dd>{{ research_data.hemoglobin|default:"—" }}</dd></div>
+              <div class="kv"><dt>Ferritin</dt><dd>{{ research_data.ferritin|default:"—" }}</dd></div>
+              <div class="kv"><dt>Calcium</dt><dd>{{ research_data.calcium|default:"—" }}</dd></div>
+              <div class="kv"><dt>Phosphorus</dt><dd>{{ research_data.phosphorus|default:"—" }}</dd></div>
+              <div class="kv"><dt>PTH</dt><dd>{{ research_data.pth|default:"—" }}</dd></div>
+              <div class="kv"><dt>Potassium</dt><dd>{{ research_data.potassium|default:"—" }}</dd></div>
+              <div class="kv"><dt>Bicarbonate</dt><dd>{{ research_data.bicarbonate|default:"—" }}</dd></div>
+              <div class="kv"><dt>Albumin</dt><dd>{{ research_data.serum_albumin|default:"—" }}</dd></div>
+              <div class="kv"><dt>CRP</dt><dd>{{ research_data.crp|default:"—" }}</dd></div>
+              <div class="kv"><dt>Cholesterol</dt><dd>{{ research_data.total_cholesterol|default:"—" }}</dd></div>
+              <div class="kv"><dt>HbA1c</dt><dd>{{ research_data.hba1c|default:"—" }}</dd></div>
+            </dl>
+          </div>
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3">Kidney Replacement Therapy</p>
+            <dl class="grid sm:grid-cols-3 lg:grid-cols-4 gap-5">
+              <div class="kv"><dt>Modality</dt><dd>{{ research_data.krt_modality|default:"—" }}</dd></div>
+              <div class="kv"><dt>First KRT</dt><dd>{{ research_data.krt_initiation_date|date:"j M Y"|default:"—" }}</dd></div>
+              <div class="kv"><dt>Transplant</dt><dd>{{ research_data.transplant_date|date:"j M Y"|default:"—" }}</dd></div>
+              <div class="kv"><dt>Vascular Access</dt><dd>{{ research_data.vascular_access_type|default:"—" }}</dd></div>
+              <div class="kv"><dt>Dialysis Duration</dt><dd>{{ research_data.dialysis_duration|default:"—" }}</dd></div>
+              <div class="kv"><dt>Dialysis Frequency</dt><dd>{{ research_data.dialysis_frequency|default:"—" }}</dd></div>
+              <div class="kv sm:col-span-2"><dt>Modality Changes</dt><dd>{{ research_data.modality_change_dates|default:"—" }}</dd></div>
+            </dl>
+          </div>
+
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3">Medication Classes</p>
+            <div class="space-y-3">
+              <div>
+                <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1.5">Kidney-related</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {% for m in research_data.kidney_medications_list %}<span class="badge badge-blue">{{ m }}</span>
+                  {% empty %}<span class="text-sm text-slate-400">None recorded</span>{% endfor %}
+                </div>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-1.5">Cardiovascular / other</p>
+                <div class="flex flex-wrap gap-1.5">
+                  {% for m in research_data.cardiovascular_medications_list %}<span class="badge badge-blue">{{ m }}</span>
+                  {% empty %}<span class="text-sm text-slate-400">None recorded</span>{% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if user.is_receptionist %}
+            <a href="{% url 'reception_edit_patient' patient.id %}" class="btn btn-ghost btn-sm">
+              <i class="fas fa-pen"></i> Update this record
+            </a>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="text-center py-14">
+          <i class="fas fa-clipboard-question text-4xl text-slate-300 mb-4"></i>
+          <h3 class="font-bold text-slate-800">No Additional Patient Record yet</h3>
+          <p class="text-sm text-slate-500 mt-1">
+            {% if user.is_receptionist %}
+              Add the education, clinical, laboratory and medication details for this patient.
+            {% else %}
+              The reception desk fills this section in when the patient is registered.
+            {% endif %}
+          </p>
+          {% if user.is_receptionist %}
+            <a href="{% url 'reception_edit_patient' patient.id %}" class="btn btn-primary btn-sm mt-5">
+              <i class="fas fa-plus"></i> Fill the record
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ===== Prescriptions ===== -->
+    <div class="tab-panel p-6 hidden" data-panel="prescriptions">
+      {% if prescriptions %}
+        <div class="space-y-3">
+          {% for pres in prescriptions %}
+            <details class="rx-item" {% if forloop.first %}open{% endif %}>
+              <summary class="flex flex-wrap items-center gap-3 px-5 py-3.5 bg-slate-50 hover:bg-slate-100 transition">
+                <span class="w-9 h-9 rounded-lg bg-white border border-slate-200 text-emerald-600 flex items-center justify-center">
+                  <i class="fas fa-file-prescription text-sm"></i>
+                </span>
+                <div class="min-w-0">
+                  <p class="text-sm font-bold text-slate-900">Pres{{ pres.id|stringformat:"04d" }}</p>
+                  <p class="text-xs text-slate-500">
+                    {{ pres.created_at|date:"j M Y, g:i A" }}
+                    {% if pres.doctor %} · {{ pres.doctor.display_name }}{% endif %}
+                  </p>
+                </div>
+                <div class="ml-auto flex items-center gap-2">
+                  <a href="{% url 'prescription_pdf' pres.id %}?view=1" target="_blank"
+                     class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  <a href="{% url 'prescription_pdf' pres.id %}"
+                     class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">
+                    <i class="fas fa-download"></i>
+                  </a>
+                  <i class="fas fa-chevron-down text-xs text-slate-400"></i>
+                </div>
+              </summary>
+
+              <div class="px-5 py-4 grid sm:grid-cols-2 gap-5 text-sm">
+                <div>
+                  <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Problems</p>
+                  <ul class="space-y-1">
+                    {% for p in pres.problems.all %}<li class="text-slate-700">• {{ p.description }}</li>
+                    {% empty %}<li class="text-slate-400">None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Examinations</p>
+                  <ul class="space-y-1">
+                    {% for e in pres.examinations.all %}
+                      <li class="text-slate-700">• {{ e.name }}{% if e.description %}: <span class="text-slate-500">{{ e.description }}</span>{% endif %}</li>
+                    {% empty %}<li class="text-slate-400">None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Reports</p>
+                  <ul class="space-y-1">
+                    {% for r in pres.reports.all %}
+                      <li class="text-slate-700">• {{ r.name }}{% if r.result %}: <span class="text-slate-500">{{ r.result }}</span>{% endif %}</li>
+                    {% empty %}<li class="text-slate-400">None</li>{% endfor %}
+                  </ul>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Medicines</p>
+                  <ul class="space-y-1">
+                    {% for m in pres.medicines.all %}
+                      <li class="text-slate-700">
+                        • <b>{{ m.name }}</b>
+                        {% if m.strength %} {{ m.strength }}{% endif %}
+                        <span class="bn text-slate-500">
+                          {% if m.frequency %} · {{ m.frequency }}{% endif %}
+                          · {{ m.days|duration_bn }}
+                        </span>
+                      </li>
+                    {% empty %}<li class="text-slate-400">None</li>{% endfor %}
+                  </ul>
+                </div>
+
+                {% if pres.images.all %}
+                  <div class="sm:col-span-2">
+                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">Report Images</p>
+                    <div class="flex flex-wrap gap-2">
+                      {% for img in pres.images.all %}
+                        <a href="{{ img.image.url }}" target="_blank">
+                          <img src="{{ img.image.url }}" alt="Report image"
+                               class="w-24 h-24 object-cover rounded-lg border border-slate-200 hover:ring-2 hover:ring-emerald-400 transition">
+                        </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </details>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-14">
+          <i class="fas fa-file-circle-plus text-4xl text-slate-300 mb-4"></i>
+          <h3 class="font-bold text-slate-800">No prescriptions yet</h3>
+          {% if user.is_doctor %}
+            <a href="{% url 'prescribe_with_patient' patient.id %}" class="btn btn-primary btn-sm mt-5">
+              <i class="fas fa-pen"></i> Write the first prescription
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ===== Visits ===== -->
+    <div class="tab-panel p-6 hidden" data-panel="visits">
+      {% if appointments %}
+        <div class="overflow-x-auto scroll-thin">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th class="py-2.5 pr-4">Date</th>
+                <th class="py-2.5 pr-4">Serial</th>
+                <th class="py-2.5 pr-4">Doctor</th>
+                <th class="py-2.5 pr-4">Status</th>
+                <th class="py-2.5">Prescription</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {% for appt in appointments %}
+                <tr>
+                  <td class="py-3 pr-4 text-slate-700">{{ appt.date|date:"j M Y" }}</td>
+                  <td class="py-3 pr-4 font-bold text-slate-900">#{{ appt.serial|stringformat:"02d" }}</td>
+                  <td class="py-3 pr-4 text-slate-600">{{ appt.doctor.display_name }}</td>
+                  <td class="py-3 pr-4">
+                    <span class="badge
+                      {% if appt.status == 'completed' %}badge-green
+                      {% elif appt.status == 'in_consultation' %}badge-blue
+                      {% elif appt.status == 'cancelled' %}badge-red
+                      {% else %}badge-amber{% endif %}">{{ appt.status_label }}</span>
+                  </td>
+                  <td class="py-3">
+                    {% if appt.prescription_id %}
+                      <a href="{% url 'prescription_pdf' appt.prescription_id %}?view=1" target="_blank"
+                         class="text-emerald-700 font-semibold hover:underline">Pres{{ appt.prescription_id|stringformat:"04d" }}</a>
+                    {% else %}
+                      <span class="text-slate-400">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-14 text-slate-400">
+          <i class="fas fa-calendar-xmark text-3xl mb-3"></i>
+          <p class="text-sm">No appointments recorded for this patient.</p>
+        </div>
+      {% endif %}
     </div>
   </div>
-  {% endif %}
-</div>
 
-<!-- Modal for full-screen image -->
-<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50 flex flex-col items-center justify-center p-4">
-  <!-- Close button - fixed position at top-right -->
-  <button onclick="closeModal()" 
-          class="fixed top-4 right-4 z-50 bg-white/90 hover:bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
-    <i class="fas fa-times text-xl"></i>
-  </button>
-  
-  <!-- Image container with proper constraints -->
-  <div class="w-full h-full flex items-center justify-center">
-    <img id="modalImg" class="max-w-full max-h-full object-contain">
+  <div class="flex justify-end">
+    <a href="{% url 'delete_patient' patient.id %}" class="btn btn-danger btn-sm">
+      <i class="fas fa-trash"></i> Delete patient record
+    </a>
   </div>
-  
-  <!-- Optional close button at bottom -->
-  <button onclick="closeModal()" 
-          class="fixed bottom-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg shadow-lg">
-    <i class="fas fa-times mr-2"></i> Close
-  </button>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-  function toggleImages(id) {
-    const el = document.getElementById(id);
-    el.classList.toggle('hidden');
-  }
-  
-  function openModal(src) {
-    const modal = document.getElementById('imageModal');
-    const img = document.getElementById('modalImg');
-    img.src = src;
-    
-    // Reset image style
-    img.style.maxWidth = '';
-    img.style.maxHeight = '';
-    
-    modal.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-    
-    // Adjust for very tall images
-    setTimeout(() => {
-      const viewportHeight = window.innerHeight;
-      const imgHeight = img.naturalHeight;
-      if (imgHeight > viewportHeight * 0.9) {
-        img.style.maxHeight = '90vh';
-      }
-    }, 50);
-  }
-  
-  function closeModal() {
-    const modal = document.getElementById('imageModal');
-    modal.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-  }
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.add('hidden'); });
+      btn.classList.add('active');
+      document.querySelector('[data-panel="' + btn.dataset.tab + '"]').classList.remove('hidden');
+    });
+  });
 </script>
-
-<style>
-  #imageModal {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 2rem; /* Gives space around edges */
-  }
-  
-  #imageModal img {
-    max-width: calc(100vw - 4rem);
-    max-height: calc(100vh - 8rem);
-    object-fit: contain;
-  }
-  
-  body.overflow-hidden {
-    overflow: hidden;
-  }
-</style>
 {% endblock %}

@@ -50,9 +50,17 @@ prescription workflow — from registering a patient, writing a structured presc
 examinations, reports, medicines), generating a printable **PDF prescription**, to maintaining a
 dedicated **CKD (Chronic Kidney Disease) clinical research registry** and visual **analytics dashboard**.
 
-It was designed for a single-doctor/clinic use case where each **Doctor** account manages their own
-patients, prescriptions, and research data, with medicine name autocompletion powered by a bulk-imported
-medicine master catalogue.
+The platform runs as **three connected consoles** sharing one patient database:
+
+- **Reception Desk** (`RE####` login) — registers patients with their full Additional Patient Record,
+  manages the daily **serial queue**, and sends patients in to the doctor.
+- **Doctor Console** (`HF####` login) — sees who is in the room and who is waiting, writes the
+  prescription, prints/downloads the PDF, and rings reception for the next patient.
+- **Admin Panel** (any other login ID, e.g. `admin-RX`) — creates and manages every account, and
+  oversees all patients, appointments and analytics across the clinic.
+
+There is **no public registration**; accounts are provisioned by an administrator, and the login ID
+alone decides which console opens.
 
 ---
 
@@ -60,16 +68,19 @@ medicine master catalogue.
 
 | Module | Description |
 |---|---|
-| **Custom Doctor Auth** | Custom `Doctor` user model (`doctor_id` based login, no username) with restricted, whitelisted registration (`doctor_id` must start with `HF`) |
-| **Patient Management** | Create, search, view profile & delete patients, scoped per-doctor |
+| **Role-Based Login** | One account model, no public sign-up. `HF####` opens the Doctor Console, `RE####` opens the Reception Desk, any other ID (e.g. `admin-RX`) opens the Admin Panel |
+| **Admin Panel** | Clinic-wide overview, account management (create / edit / reset password / deactivate), every doctor's appointment board for any date, plus a link to the Django admin for raw data |
+| **Appointment Queue** | Reception assigns serials (1, 2, 3 …) per doctor per day; the board shows who is in the room, who is waiting and who is done |
+| **Live Call Bell** | The doctor's **Next Patient** button completes the consultation and rings a 3-second bell at reception (Web Audio, no audio file), with a one-click *Send Next Patient* action |
+| **Patient Management** | Reception registers, searches and updates patients; doctors see the patients registered under them |
 | **Structured Prescriptions** | Add multiple **Problems**, **Examinations**, **Reports** (+ uploaded report images), and **Medicines** per prescription |
 | **PDF Prescription Generator** | Auto-generates a print-ready, hospital-letterhead-styled prescription PDF using **WeasyPrint**, with Bangla font support |
-| **Clinical Research Registry** | A dedicated post-prescription form capturing CKD-specific data: comorbidities, KRT modality, labs (eGFR, uACR, HbA1c, etc.), medications, socio-economic data — kept **out** of the printed PDF, used only for registry/analytics |
+| **Additional Patient Record** | Filled in by reception at registration and attached to the **patient**, capturing CKD-specific data: comorbidities, KRT modality, labs (eGFR, uACR, HbA1c, etc.), medications, socio-economic data — kept **out** of the printed PDF, used only for registry/analytics |
 | **Analytics Dashboard** | Interactive Plotly charts: gender split, age distribution, address distribution, top medicines, top problems, monthly trend, comorbidity prevalence, smoking status, KRT modality, employment status — filterable by year/month |
 | **Smart Search & Filters** | Search patients with advanced research-data filters (diagnosis, comorbidities, KRT modality, smoking, etc.) |
 | **Excel Export** | Export filtered patient/prescription data to `.xlsx` via `openpyxl` |
 | **Autocomplete APIs** | AJAX autocomplete endpoints for Problems, Examinations, Reports, and Medicines (backed by a `MedicineMaster` catalogue imported from CSV) |
-| **Profile Management** | Doctor profile picture upload/change |
+| **Profile Management** | Profile details and picture upload/change for both roles |
 | **Docker & Render Ready** | Ships with a `Dockerfile`, `entrypoint.sh`, and `render.yaml` for one-click containerized deployment |
 
 ---
@@ -315,17 +326,37 @@ sequenceDiagram
 ### Authentication Flow
 
 ```mermaid
-flowchart LR
-    A["Visitor lands on Login page"] --> B{"doctor_id + password"}
-    B -- "valid, HF-prefixed & registered" --> C["authenticate() via DoctorManager"]
-    C --> D["Django session created"]
-    D --> E["Redirect to Home (dashboard)"]
-    B -- "invalid" --> F["Show form errors"]
+flowchart TD
+    A["Login page"] --> B{"well-formed ID?"}
+    B -- "no" --> R["Reject: enter a valid login ID"]
+    B -- "yes" --> C["LoginIDBackend.authenticate(doctor_id, password)"]
+    C -- "no match / inactive" --> E["Reject: invalid login ID or password"]
+    C -- "match" --> D{"account role"}
+    D -- "HF#### -> doctor" --> F["Doctor Console  /doctor/"]
+    D -- "RE#### -> receptionist" --> G["Reception Desk  /reception/"]
+    D -- "other ID -> admin" --> H["Admin Panel  /manage/"]
+```
 
-    G["New Doctor Registration"] --> H{"doctor_id starts with 'HF'<br/>and length == 6?"}
-    H -- "No" --> I["Reject: private website"]
-    H -- "Yes, unique" --> J["Create Doctor account"]
-    J --> A
+> Clinic roles are derived from the ID prefix and cannot drift; administrator IDs are free-form and
+> carry `role="admin"` explicitly. Accounts are created in the Admin Panel, via
+> `manage.py createaccount`, or from the Django admin. There is no public registration route.
+
+### Clinic Workflow (Reception <-> Doctor)
+
+```mermaid
+sequenceDiagram
+    participant P as Patient
+    participant R as Reception (RE####)
+    participant D as Doctor (HF####)
+
+    P->>R: Arrives at the desk
+    R->>R: Register patient + Additional Patient Record<br/>(or look up an existing patient)
+    R->>R: Add to queue -> serial 1, 2, 3 ...
+    R->>D: Send next patient in (status: in_consultation)
+    D->>D: Open record, write prescription
+    D->>D: Generate / print / download PDF
+    D->>R: Press "Next Patient"<br/>(consultation completed + 3s bell rings)
+    R->>D: Send the next waiting serial in
 ```
 
 ### Analytics Data Flow
@@ -376,7 +407,8 @@ MultiRx-JSTU/
 │   ├── backends.py                  # Custom auth backend for Doctor login
 │   ├── admin.py
 │   ├── management/commands/
-│   │   └── import_medicines.py      # Bulk-imports data/Medicines.csv → MedicineMaster
+│   │   ├── import_medicines.py      # Bulk-imports data/Medicines.csv → MedicineMaster
+│   │   └── createaccount.py         # Provisions HF#### / RE#### accounts
 │   ├── templatetags/
 │   │   └── custom_filters.py        # e.g. duration_bn (Bangla duration formatting)
 │   ├── migrations/
@@ -384,17 +416,29 @@ MultiRx-JSTU/
 │   │   ├── images/                  # Logo, hero images
 │   │   └── fonts/                   # NotoSansBengali, TiroBangla (for PDF)
 │   └── templates/app/
-│       ├── base.html                # Shared layout, navbar, footer, dev modal
-│       ├── home.html
-│       ├── login.html / register.html
+│       ├── base.html                # Role-aware app shell, sidebar, call bell
+│       ├── home.html                # Public landing page
+│       ├── login.html
 │       ├── profile.html / profile_pic_change.html
-│       ├── prescribe.html           # New prescription form
+│       ├── prescribe.html           # Prescription form (doctor)
 │       ├── prescription_pdf.html    # WeasyPrint PDF template
-│       ├── research_data.html       # CKD registry form
 │       ├── search.html              # Patient search + filters
-│       ├── patient_profile.html     # Full patient history
+│       ├── patient_profile.html     # Full patient record & history
 │       ├── analysis.html            # Plotly analytics dashboard
-│       └── confirm_delete.html
+│       ├── confirm_delete.html
+│       ├── manage/
+│       │   ├── dashboard.html      # Admin overview
+│       │   ├── accounts.html       # Account list
+│       │   ├── account_form.html   # Create / edit an account
+│       │   └── appointments.html   # All doctors, any date
+│       ├── reception/
+│       │   ├── dashboard.html
+│       │   ├── new_patient.html     # Demographics + Additional Patient Record
+│       │   └── appointments.html    # Serial queue board
+│       └── doctor/
+│           ├── dashboard.html
+│           ├── appointments.html    # Current patient + Next Patient button
+│           └── prescribe_picker.html
 └── media/                           # User-uploaded content (runtime)
     ├── profile_pics/
     └── report_images/
@@ -424,12 +468,20 @@ python manage.py migrate
 # 5. (Optional) seed the medicine catalogue used for autocomplete
 python manage.py import_medicines
 
-# 6. Create a superuser (Doctor account, doctor_id must start with "HF")
-python manage.py createsuperuser
+# 6. Create the administrator account (opens the Admin Panel)
+python manage.py createaccount admin-RX --role admin
 
-# 7. Run the development server
+# 7. Create the clinic accounts (or do this from the Admin Panel afterwards)
+python manage.py createaccount HF1234 --first-name Ayesha --last-name Rahman --specialization Nephrologist
+python manage.py createaccount RE0001 --first-name Rafi --last-name Ahmed
+
+# 8. Run the development server
 python manage.py runserver
 ```
+
+> **Login IDs:** `HF` + 4 digits for a doctor, `RE` + 4 digits for a receptionist, and any other
+> 3-32 character ID for an administrator. Administrator accounts also receive Django-admin access,
+> so a separate `createsuperuser` is not required.
 
 The app will be available at **http://127.0.0.1:8000/**.
 
@@ -462,22 +514,44 @@ If `DATABASE_URL` isn't set, the app falls back to a local `sqlite:///db.sqlite3
 
 | Path | View | Purpose |
 |---|---|---|
-| `/` | `home_view` | Landing / dashboard |
-| `/login/`, `/register/`, `/logout/` | auth views | Doctor authentication |
-| `/profile/` | `profile_view` | Doctor profile |
+| `/` | `home_view` | Public landing page (redirects signed-in users to their console) |
+| `/login/`, `/logout/` | auth views | Single login for both roles |
+| `/dashboard/` | `dashboard_redirect` | Sends the user to their role's home |
+| `/profile/` | `profile_view` | Account profile (both roles) |
 | `/profile/picture/change/`, `/profile/picture/update/` | profile picture views | Avatar management |
-| `/prescribe/` | `prescribe_view` | Create a new prescription (new patient) |
-| `/prescribe/<patient_id>/` | `prescribe_with_patient` | New prescription for existing patient |
-| `/prescription/<id>/pdf/` | `prescription_pdf` | Generate/download PDF |
-| `/prescription/<id>/research-data/` | `research_data_view` | CKD registry form |
-| `/search/` | `search_view` | Patient search + filters |
-| `/search/export/` | `export_excel` | Export results to Excel |
-| `/patient/<id>/` | `patient_profile_view` | Full patient history |
+| **Administrator** | | |
+| `/manage/` | `admin_dashboard` | Clinic-wide overview |
+| `/manage/accounts/` | `admin_accounts` | All accounts, filterable by role |
+| `/manage/accounts/new/` | `admin_account_create` | Create a doctor / receptionist / admin |
+| `/manage/accounts/<id>/` | `admin_account_edit` | Edit an account |
+| `/manage/accounts/<id>/password/` | `admin_account_password` | Set a new password |
+| `/manage/accounts/<id>/toggle/` | `admin_account_toggle` | Activate / deactivate an account |
+| `/manage/appointments/` | `admin_appointments` | Every doctor's queue for any date |
+| **Reception** | | |
+| `/reception/` | `reception_dashboard` | Reception home |
+| `/reception/new-patient/` | `reception_new_patient` | Register a patient + Additional Patient Record |
+| `/reception/patient/<id>/edit/` | `reception_edit_patient` | Update a patient's record |
+| `/reception/appointments/` | `reception_appointments` | Serial queue board |
+| `/reception/appointments/queue/<patient_id>/` | `reception_queue_patient` | Give a patient a serial |
+| `/reception/appointments/<id>/cancel/` | `reception_cancel_appointment` | Cancel a queued patient |
+| `/reception/send-next/` | `reception_send_next` | Send the next waiting patient in |
+| `/reception/api/queue-state/` | `reception_queue_state` | Poll for doctor calls + board counts |
+| **Doctor** | | |
+| `/doctor/` | `doctor_dashboard` | Doctor home |
+| `/doctor/appointments/` | `doctor_appointments` | Current patient + waiting queue |
+| `/doctor/next-patient/` | `doctor_next_patient` | Complete the consultation and ring reception |
+| `/doctor/api/queue-state/` | `doctor_queue_state` | Poll for the live queue |
+| `/prescribe/` | `prescribe_picker` | Pick the patient to prescribe for |
+| `/prescribe/<patient_id>/` | `prescribe_with_patient` | Write the prescription |
+| `/prescription/<id>/pdf/` | `prescription_pdf` | Generate / view / download the PDF |
+| **Shared** | | |
+| `/patients/` | `search_view` | Patient search + advanced filters |
+| `/patients/export/` | `export_excel` | Export results to Excel |
+| `/patient/<id>/` | `patient_profile_view` | Full patient record, prescriptions & visits |
 | `/patient/<id>/delete/` | `delete_patient` | Delete a patient record |
 | `/analysis/` | `analysis_view` | Analytics dashboard |
 | `/autocomplete/problem/`, `/report/`, `/medicine/`, `/examination/` | autocomplete APIs | AJAX suggestions |
-| `/api/medicines/` | `medicine_autocomplete` | Medicine search API |
-| `/admin/` | Django admin | Backend administration |
+| `/admin/` | Django admin | Account & data administration |
 
 ---
 

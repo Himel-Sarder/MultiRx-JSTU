@@ -1,0 +1,154 @@
+{% extends 'app/base.html' %}
+{% block title %}Accounts{% endblock %}
+{% block page_title %}Accounts{% endblock %}
+{% block page_subtitle %}{{ accounts|length }} of {{ totals.all }} account{{ totals.all|pluralize }} shown{% endblock %}
+
+{% block actions %}
+  <a href="{% url 'admin_account_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-user-plus"></i> <span class="hidden sm:inline">New Account</span>
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .role-tab {
+    padding: .4rem .9rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+    border: 1px solid #cbd5e1; background: #fff; color: #475569; white-space: nowrap;
+  }
+  .role-tab:hover { border-color: #6ee7b7; color: #047857; }
+  .role-tab.active { background: #059669; border-color: #059669; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <div class="card card-pad space-y-4">
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'admin_accounts' %}" class="role-tab {% if not role_filter %}active{% endif %}">
+        All <span class="opacity-70">{{ totals.all }}</span>
+      </a>
+      <a href="?role=doctor" class="role-tab {% if role_filter == 'doctor' %}active{% endif %}">
+        <i class="fas fa-user-doctor mr-1"></i> Doctors <span class="opacity-70">{{ totals.doctor }}</span>
+      </a>
+      <a href="?role=receptionist" class="role-tab {% if role_filter == 'receptionist' %}active{% endif %}">
+        <i class="fas fa-headset mr-1"></i> Receptionists <span class="opacity-70">{{ totals.receptionist }}</span>
+      </a>
+      <a href="?role=admin" class="role-tab {% if role_filter == 'admin' %}active{% endif %}">
+        <i class="fas fa-shield-halved mr-1"></i> Administrators <span class="opacity-70">{{ totals.admin }}</span>
+      </a>
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-3">
+      {% if role_filter %}<input type="hidden" name="role" value="{{ role_filter }}">{% endif %}
+      <div class="relative flex-1 min-w-[14rem]">
+        <input type="text" name="q" value="{{ query }}" class="form-input pr-9"
+               placeholder="Search by ID, name or email…" autocomplete="off">
+        <i class="fas fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+      </div>
+      <button type="submit" class="btn btn-primary">Search</button>
+      {% if query %}
+        <a href="{% url 'admin_accounts' %}{% if role_filter %}?role={{ role_filter }}{% endif %}" class="btn btn-ghost">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto scroll-thin">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200 bg-slate-50">
+            <th class="py-3 px-6">Account</th>
+            <th class="py-3 pr-4">Role</th>
+            <th class="py-3 pr-4">Contact</th>
+            <th class="py-3 pr-4">Status</th>
+            <th class="py-3 pr-6 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for account in accounts %}
+            <tr class="{% if not account.is_active %}bg-slate-50/70{% endif %}">
+              <td class="py-3.5 px-6">
+                <div class="flex items-center gap-3">
+                  {% if account.profile_picture %}
+                    <img src="{{ account.profile_picture.url }}" alt="" class="w-9 h-9 rounded-full object-cover">
+                  {% else %}
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold
+                      {% if account.is_admin %}bg-slate-200 text-slate-700
+                      {% elif account.is_receptionist %}bg-blue-100 text-blue-700
+                      {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                      {{ account.doctor_id|slice:":2"|upper }}
+                    </div>
+                  {% endif %}
+                  <div class="min-w-0">
+                    <p class="font-semibold text-slate-900 truncate">
+                      {{ account.display_name }}
+                      {% if account == user %}<span class="badge badge-slate ml-1">you</span>{% endif %}
+                    </p>
+                    <p class="text-xs text-slate-500 font-mono">{{ account.doctor_id }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3.5 pr-4">
+                <span class="badge
+                  {% if account.is_admin %}badge-slate{% elif account.is_receptionist %}badge-blue{% else %}badge-green{% endif %}">
+                  {{ account.role_label }}
+                </span>
+                {% if account.specialization %}
+                  <p class="text-xs text-slate-500 mt-1">{{ account.specialization }}</p>
+                {% endif %}
+              </td>
+              <td class="py-3.5 pr-4 text-slate-600">
+                {% if account.email %}<p class="truncate">{{ account.email }}</p>{% endif %}
+                {% if account.phone %}<p class="text-xs text-slate-500">{{ account.phone }}</p>{% endif %}
+                {% if not account.email and not account.phone %}<span class="text-slate-400">—</span>{% endif %}
+              </td>
+              <td class="py-3.5 pr-4">
+                {% if account.is_active %}
+                  <span class="badge badge-green">Active</span>
+                {% else %}
+                  <span class="badge badge-red">Deactivated</span>
+                {% endif %}
+                {% if account.last_login %}
+                  <p class="text-[11px] text-slate-400 mt-1">Last in {{ account.last_login|date:"j M, g:i A" }}</p>
+                {% endif %}
+              </td>
+              <td class="py-3.5 pr-6">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="{% url 'admin_account_edit' account.id %}" class="btn btn-ghost btn-sm">
+                    <i class="fas fa-pen"></i> Edit
+                  </a>
+                  {% if account != user %}
+                    <form method="post" action="{% url 'admin_account_toggle' account.id %}"
+                          onsubmit="return confirm('{% if account.is_active %}Deactivate{% else %}Reactivate{% endif %} {{ account.doctor_id|escapejs }}?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm {% if account.is_active %}btn-danger{% else %}btn-ghost{% endif %}">
+                        <i class="fas {% if account.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="py-16 text-center text-slate-400">
+                <i class="fas fa-user-slash text-3xl mb-3 block"></i>
+                No accounts match this filter.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flash flash-info">
+    <i class="fas fa-circle-info mt-0.5"></i>
+    <span>
+      A login ID of <b>HF</b> + 4 digits creates a doctor, <b>RE</b> + 4 digits creates a receptionist.
+      Any other ID (like <b>admin-RX</b>) is an administrator and opens this panel instead of a clinic console.
+    </span>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends 'app/base.html' %}
+{% block title %}Doctor Home{% endblock %}
+{% block page_title %}Doctor Home{% endblock %}
+{% block page_subtitle %}{{ today|date:"l, j F Y" }}{% endblock %}
+
+{% block actions %}
+  <a href="{% url 'doctor_appointments' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-calendar-check"></i> <span class="hidden sm:inline">Appointments</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header + stats -->
+  <div class="card overflow-hidden">
+    <div class="px-6 py-6 sm:px-8 sm:py-7" style="background:linear-gradient(120deg,#064e3b 0%,#047857 100%);">
+      <p class="text-emerald-200 text-sm font-medium">Good to see you,</p>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">{{ user.display_name }}</h2>
+      <p class="text-emerald-100/80 text-sm mt-2">
+        {% if current %}
+          Serial #{{ current.serial|stringformat:"02d" }} — {{ current.patient.name }} is in the room.
+        {% elif waiting_count %}
+          {{ waiting_count }} patient{{ waiting_count|pluralize }} waiting. Call the next one when you are ready.
+        {% else %}
+          No patients are waiting right now.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-slate-200">
+      <div class="p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Waiting</p>
+        <p class="text-3xl font-extrabold text-amber-600 mt-1">{{ waiting_count }}</p>
+      </div>
+      <div class="p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Seen today</p>
+        <p class="text-3xl font-extrabold text-emerald-600 mt-1">{{ completed_count }}</p>
+      </div>
+      <div class="p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">My patients</p>
+        <p class="text-3xl font-extrabold text-blue-600 mt-1">{{ total_patients }}</p>
+      </div>
+      <div class="p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Prescriptions</p>
+        <p class="text-3xl font-extrabold text-slate-800 mt-1">{{ total_prescriptions }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-6">
+
+    <!-- Current patient -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="card card-pad">
+        <h2 class="section-title mb-4"><i class="fas fa-stethoscope text-emerald-600"></i> In the room</h2>
+
+        {% if current %}
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+            <div class="flex flex-wrap items-center gap-4">
+              <span class="w-14 h-14 rounded-xl bg-emerald-600 text-white text-xl font-extrabold flex items-center justify-center">
+                {{ current.serial|stringformat:"02d" }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-lg font-bold text-slate-900 truncate">{{ current.patient.name }}</h3>
+                <p class="text-sm text-slate-600">
+                  P{{ current.patient.id|stringformat:"04d" }} · {{ current.patient.age }} years · {{ current.patient.gender }}
+                  {% if current.patient.phone %} · {{ current.patient.phone }}{% endif %}
+                </p>
+              </div>
+            </div>
+            {% if current.note %}
+              <p class="mt-4 text-sm text-slate-700 bg-white rounded-lg px-3 py-2 border border-emerald-100">
+                <i class="fas fa-note-sticky text-slate-400 mr-1"></i>{{ current.note }}
+              </p>
+            {% endif %}
+            <div class="flex flex-wrap gap-2 mt-5">
+              <a href="{% url 'patient_profile' current.patient.id %}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-folder-open"></i> Full record
+              </a>
+              <a href="{% url 'prescribe_with_patient' current.patient.id %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-file-prescription"></i> Write prescription
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-12 border border-dashed border-slate-200 rounded-xl">
+            <i class="fas fa-door-open text-3xl text-slate-300 mb-3"></i>
+            <p class="text-sm text-slate-500">The room is free.</p>
+            {% if waiting_count %}
+              <form method="post" action="{% url 'doctor_next_patient' %}" class="mt-4">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-amber btn-sm">
+                  <i class="fas fa-bell"></i> Call next patient
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Recent prescriptions -->
+      <div class="card">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <h2 class="section-title"><i class="fas fa-file-lines text-blue-600"></i> Recent prescriptions</h2>
+          <a href="{% url 'search' %}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+            All patients <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for pres in recent_prescriptions %}
+            <div class="flex items-center gap-3 px-6 py-3.5 hover:bg-slate-50 transition">
+              <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <i class="fas fa-file-prescription text-sm"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <a href="{% url 'patient_profile' pres.patient.id %}"
+                   class="text-sm font-semibold text-slate-900 hover:text-emerald-700 truncate block">
+                  {{ pres.patient.name }}
+                </a>
+                <p class="text-xs text-slate-500">Pres{{ pres.id|stringformat:"04d" }} · {{ pres.created_at|date:"j M Y, g:i A" }}</p>
+              </div>
+              <a href="{% url 'prescription_pdf' pres.id %}?view=1" target="_blank"
+                 class="btn btn-ghost btn-sm"><i class="fas fa-eye"></i></a>
+            </div>
+          {% empty %}
+            <div class="text-center py-12 text-slate-400">
+              <i class="fas fa-file-circle-plus text-2xl mb-2"></i>
+              <p class="text-sm">No prescriptions written yet.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Waiting queue -->
+    <div class="card">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="section-title"><i class="fas fa-hourglass-half text-amber-600"></i> Waiting</h2>
+        <span class="badge badge-amber">{{ waiting_count }}</span>
+      </div>
+      <div class="p-4 space-y-2">
+        {% for appt in waiting %}
+          <a href="{% url 'patient_profile' appt.patient.id %}"
+             class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition">
+            <span class="w-9 h-9 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold flex items-center justify-center">
+              {{ appt.serial|stringformat:"02d" }}
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-slate-900 truncate">{{ appt.patient.name }}</p>
+              <p class="text-xs text-slate-500">{{ appt.patient.age }}y · {{ appt.patient.gender }}</p>
+            </div>
+            <i class="fas fa-chevron-right text-xs text-slate-300"></i>
+          </a>
+        {% empty %}
+          <div class="text-center py-12 text-slate-400">
+            <i class="fas fa-user-clock text-2xl mb-2"></i>
+            <p class="text-sm">Queue is empty.</p>
+          </div>
+        {% endfor %}
+        {% if waiting_count > 5 %}
+          <a href="{% url 'doctor_appointments' %}" class="block text-center text-sm font-semibold text-emerald-700 pt-2">
+            View all {{ waiting_count }} <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

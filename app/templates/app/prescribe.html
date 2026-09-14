@@ -1,955 +1,673 @@
 {% extends "app/base.html" %}
-{% block content %}
+{% block title %}Prescription · {{ patient.name }}{% endblock %}
+{% block page_title %}Write Prescription{% endblock %}
+{% block page_subtitle %}{{ patient.name }} · P{{ patient.id|stringformat:"04d" }}{% endblock %}
 
+{% block extra_css %}
 <style>
-  body {
-    background-image: linear-gradient(rgba(201, 237, 231, 0.53), rgba(25, 201, 145, 0.51)),
-                     url('https://i.postimg.cc/Fs5w3r7s/1.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    min-height: 100vh;
+  .rx-section { margin-bottom: 1.75rem; }
+  .rx-label {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .85rem; font-weight: 700; color: #0f172a; margin-bottom: .65rem;
   }
-  
-  .prescription-container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 2.5rem;
-    background-color: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-  }
-  
-  .form-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #13a088e2;
-    display: flex;
-    align-items: center;
-  }
-  
-  .form-title svg {
-    margin-right: 0.75rem;
-    color: #059669;
-  }
-  
-  .form-section {
-    margin-bottom: 1.75rem;
-  }
-  
-  .section-label {
-    display: block;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.5rem;
-  }
-  
-  .form-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-    background-color: #f9fafb;
-  }
-  
-  .form-input:focus {
-    outline: none;
-    border-color: #059669;
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-    background-color: white;
-  }
-  
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem 1.25rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-  }
-  
-  .btn-primary {
-    background-color: #059669;
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: #047857;
-  }
-  
-  .btn-secondary {
-    background-color: #e5e7eb;
-    color: #374151;
-    margin-right: 0.75rem;
-  }
-  
-  .btn-secondary:hover {
-    background-color: #d1d5db;
-  }
-  
-  .btn-icon {
-    margin-right: 0.5rem;
-    width: 1.1rem;
-    height: 1.1rem;
-  }
-  
-  .suggestions-box {
-    position: absolute;
-    width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 50;
-    margin-top: 0.25rem;
-  }
-  
-  .suggestion-item {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-  
-  .suggestion-item:hover {
-    background-color: #f3f4f6;
-  }
+  .rx-label .hint { font-weight: 500; color: #94a3b8; font-size: .75rem; }
 
-  .suggestion-item .suggestion-main {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .suggestion-item .suggestion-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .suggestion-item .suggestion-sub {
-    font-size: 0.75rem;
-    color: #6b7280;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .suggestion-badge {
-    flex-shrink: 0;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.1rem 0.5rem;
-    border-radius: 9999px;
-  }
-
-  .suggestion-badge.history {
-    background-color: #d1fae5;
-    color: #047857;
-  }
-
-  .suggestion-badge.catalog {
-    background-color: #e5e7eb;
-    color: #4b5563;
-  }
-
-  .suggestions-filter {
-    display: flex;
-    gap: 0.35rem;
-    padding: 0.4rem 0.6rem;
-    border-bottom: 1px solid #e5e7eb;
-    background-color: #f9fafb;
-  }
-
-  .suggestions-filter button {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.15rem 0.55rem;
-    border-radius: 9999px;
-    border: 1px solid #d1d5db;
-    background-color: white;
-    color: #4b5563;
-    cursor: pointer;
-  }
-
-  .suggestions-filter button.active {
-    background-color: #059669;
-    border-color: #059669;
-    color: white;
-  }
-  
-  .hidden {
-    display: none;
-  }
-  
   .medicine-row {
-    margin-bottom: 1.5rem;
-    padding: 1.25rem;
-    background-color: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    position: relative;
+    padding: 1rem; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: .75rem; position: relative; transition: border-color .15s ease;
   }
-  
-  .grid-cols-4 {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.75rem;
+  .medicine-row:hover { border-color: #a7f3d0; }
+  .medicine-row + .medicine-row { margin-top: .75rem; }
+  .row-remove {
+    position: absolute; top: .5rem; right: .5rem;
+    width: 1.65rem; height: 1.65rem; border-radius: .4rem;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; transition: all .15s ease;
   }
-  
-  /* Style for select dropdown */
-  select.form-input {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1rem;
-    padding-right: 2.5rem;
+  .row-remove:hover { background: #fee2e2; color: #b91c1c; }
+
+  .med-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .6rem; }
+  .duration-container { display: flex; gap: .4rem; }
+  .duration-number { width: 4.25rem; text-align: center; }
+  .duration-unit { flex: 1; }
+
+  .pair-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: .6rem; align-items: start; }
+  .pair-grid + .pair-grid { margin-top: .6rem; }
+
+  .suggestions-box {
+    position: absolute; width: 100%; max-height: 15rem; overflow-y: auto;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: .6rem;
+    box-shadow: 0 12px 28px -12px rgba(15,23,42,.35); z-index: 50; margin-top: .25rem;
   }
-  
-  /* New styles for duration selector */
-  .duration-container {
-    display: flex;
-    gap: 0.5rem;
+  .suggestion-item {
+    padding: .5rem .8rem; cursor: pointer; font-size: .85rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
   }
-  
-  .duration-number {
-    width: 70px;
-    text-align: center;
+  .suggestion-item:hover { background: #f0fdf4; }
+  .suggestion-main { display: flex; flex-direction: column; overflow: hidden; }
+  .suggestion-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .suggestion-sub { font-size: .72rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .suggestion-badge { flex-shrink: 0; font-size: .65rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; }
+  .suggestion-badge.history { background: #d1fae5; color: #047857; }
+  .suggestion-badge.catalog { background: #e2e8f0; color: #475569; }
+  .suggestions-filter {
+    display: flex; gap: .3rem; padding: .4rem .6rem;
+    border-bottom: 1px solid #e2e8f0; background: #f8fafc;
+    position: sticky; top: 0;
   }
-  
-  .duration-unit {
-    flex: 1;
+  .suggestions-filter button {
+    font-size: .68rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px;
+    border: 1px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer;
   }
-  
-  .duration-unit option[value="colbe"] {
-    font-style: italic;
-  }
+  .suggestions-filter button.active { background: #059669; border-color: #059669; color: #fff; }
+  .hidden { display: none; }
 
   @media (max-width: 768px) {
-    .prescription-container {
-      padding: 1.5rem;
-      margin: 1rem;
-    }
-    
-    .grid-cols-4 {
-      grid-template-columns: 1fr;
-    }
-    
-    .btn {
-      width: 100%;
-      margin-bottom: 0.75rem;
-    }
+    .med-grid { grid-template-columns: 1fr 1fr; }
+    .pair-grid { grid-template-columns: 1fr; }
   }
 </style>
+{% endblock %}
 
-<div class="prescription-container">
-  <h2 class="form-title">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    </svg>
-    Create Prescription
-  </h2>
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
 
-  <form method="POST" enctype="multipart/form-data" class="space-y-6">
-    {% csrf_token %}
-    {{ form.as_p }}
+  <!-- ===== Patient header (entered by reception; read-only here) ===== -->
+  <div class="card overflow-hidden">
+    <div class="px-6 py-5 flex flex-wrap items-center gap-4 border-b border-slate-200">
+      {% if appointment %}
+        <span class="w-14 h-14 rounded-xl bg-emerald-600 text-white text-xl font-extrabold flex items-center justify-center flex-shrink-0">
+          {{ appointment.serial|stringformat:"02d" }}
+        </span>
+      {% else %}
+        <span class="w-14 h-14 rounded-xl bg-slate-100 text-slate-500 text-xl font-bold flex items-center justify-center flex-shrink-0">
+          {{ patient.name|slice:":1"|upper }}
+        </span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 class="text-xl font-bold text-slate-900 truncate">{{ patient.name }}</h2>
+        <p class="text-sm text-slate-500">
+          P{{ patient.id|stringformat:"04d" }} · {{ patient.age }} years · {{ patient.gender }}
+          {% if patient.phone %} · {{ patient.phone }}{% endif %} · {{ patient.address }}
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'patient_profile' patient.id %}" class="btn btn-ghost btn-sm">
+          <i class="fas fa-folder-open"></i> Record
+        </a>
+        {% if last_prescription %}
+          <button type="button" id="load-last" class="btn btn-ghost btn-sm">
+            <i class="fas fa-clone"></i> Copy last Rx
+          </button>
+        {% endif %}
+      </div>
+    </div>
 
-    <!-- Problems Section -->
-    <div class="form-section">
-      <label class="section-label">Problems</label>
-      <div id="problems">
-        <div class="relative">
-          <input type="text" name="problems" class="form-input autocomplete" placeholder="Enter patient problems" />
+    {% if research_data %}
+      <div class="px-6 py-4 bg-slate-50 text-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+          Additional Patient Record <span class="font-normal normal-case tracking-normal">(from reception)</span>
+        </p>
+        <div class="flex flex-wrap gap-x-6 gap-y-2">
+          {% if research_data.diagnosis %}
+            <span><span class="text-slate-500">Diagnosis:</span> <b class="text-slate-800">{{ research_data.diagnosis }}</b></span>
+          {% endif %}
+          {% if research_data.egfr %}<span><span class="text-slate-500">eGFR:</span> <b class="text-slate-800">{{ research_data.egfr }}</b></span>{% endif %}
+          {% if research_data.serum_creatinine %}<span><span class="text-slate-500">Creatinine:</span> <b class="text-slate-800">{{ research_data.serum_creatinine }}</b></span>{% endif %}
+          {% if research_data.hemoglobin %}<span><span class="text-slate-500">Hb:</span> <b class="text-slate-800">{{ research_data.hemoglobin }}</b></span>{% endif %}
+          {% if research_data.bmi %}<span><span class="text-slate-500">BMI:</span> <b class="text-slate-800">{{ research_data.bmi }}</b></span>{% endif %}
+          {% for c in research_data.comorbidities_list %}<span class="badge badge-red">{{ c }}</span>{% endfor %}
         </div>
       </div>
-      <button type="button" onclick="addProblemField()" class="btn btn-secondary mt-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add Problem
+    {% else %}
+      <div class="px-6 py-3 bg-amber-50 text-xs text-amber-800 border-t border-amber-200">
+        <i class="fas fa-circle-info mr-1"></i>
+        No Additional Patient Record on file — the reception desk can add one from the patient's page.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ===== Prescription form ===== -->
+  <form method="POST" enctype="multipart/form-data" class="card card-pad" id="rx-form">
+    {% csrf_token %}
+
+    <!-- Problems -->
+    <div class="rx-section">
+      <label class="rx-label"><i class="fas fa-notes-medical text-emerald-600"></i> Problems</label>
+      <div id="problems" class="space-y-2">
+        <div class="pair-grid">
+          <div class="relative" style="grid-column: span 2;">
+            <input type="text" name="problems" id="problem_0" class="form-input autocomplete"
+                   placeholder="Enter patient problem" autocomplete="off" />
+          </div>
+          <button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <button type="button" onclick="addProblemField()" class="btn btn-ghost btn-sm mt-2.5">
+        <i class="fas fa-plus"></i> Add Problem
       </button>
     </div>
 
-    <!-- Examinations Section -->
-    <div class="form-section">
-      <label class="section-label">Examinations</label>
-      <div id="examinations" class="space-y-3">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <!-- Examinations -->
+    <div class="rx-section">
+      <label class="rx-label"><i class="fas fa-user-doctor text-emerald-600"></i> Examinations</label>
+      <div id="examinations">
+        <div class="pair-grid">
           <div class="relative">
-            <input type="text" name="examination_names" id="examination_name_0" class="form-input autocomplete" placeholder="Examination Name" />
+            <input type="text" name="examination_names" id="examination_name_0" class="form-input autocomplete"
+                   placeholder="Examination Name" autocomplete="off" />
           </div>
           <input type="text" name="examination_results" class="form-input" placeholder="Examination Result" />
+          <button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
-      <button type="button" onclick="addExaminationField()" class="btn btn-secondary mt-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add Examination
+      <button type="button" onclick="addExaminationField()" class="btn btn-ghost btn-sm mt-2.5">
+        <i class="fas fa-plus"></i> Add Examination
       </button>
     </div>
 
-    <!-- Reports Section -->
-    <div class="form-section">
-      <label class="section-label">Reports</label>
-      <div id="reports" class="space-y-3">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <!-- Reports -->
+    <div class="rx-section">
+      <label class="rx-label"><i class="fas fa-flask-vial text-emerald-600"></i> Reports</label>
+      <div id="reports">
+        <div class="pair-grid">
           <div class="relative">
-            <input type="text" name="report_names" id="report_name_0" class="form-input autocomplete" placeholder="Report Name" />
+            <input type="text" name="report_names" id="report_name_0" class="form-input autocomplete"
+                   placeholder="Report Name" autocomplete="off" />
           </div>
           <input type="text" name="report_results" class="form-input" placeholder="Report Result" />
+          <button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
-      <button type="button" onclick="addReportField()" class="btn btn-secondary mt-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add Report
+      <button type="button" onclick="addReportField()" class="btn btn-ghost btn-sm mt-2.5">
+        <i class="fas fa-plus"></i> Add Report
       </button>
     </div>
 
-    <!-- Report Images -->
-    <div class="form-section">
-      <label class="section-label">Report Images</label>
-      <input type="file" name="report_images" multiple class="form-input" />
+    <!-- Report images -->
+    <div class="rx-section">
+      <label class="rx-label">
+        <i class="fas fa-images text-emerald-600"></i> Report Images
+        <span class="hint">Scans or photos attached to this prescription</span>
+      </label>
+      <input type="file" name="report_images" id="report_images" multiple accept="image/*"
+             class="form-input file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" />
+      <p id="image-count" class="text-xs text-slate-500 mt-1.5 hidden"></p>
     </div>
 
-    <!-- Medicines Section -->
-    <div class="form-section">
-      <label class="section-label">Medicines</label>
+    <!-- Medicines -->
+    <div class="rx-section">
+      <label class="rx-label"><i class="fas fa-pills text-emerald-600"></i> Medicines</label>
       <div id="medicines">
         <div class="medicine-row">
-          <div class="relative">
-            <input type="text" name="medicine_names" id="medName0" class="form-input autocomplete" 
+          <button type="button" class="row-remove" onclick="removeRow(this)" title="Remove"><i class="fas fa-trash"></i></button>
+          <div class="relative pr-8">
+            <input type="text" name="medicine_names" id="medName0" class="form-input autocomplete"
                    placeholder="Medicine Name" autocomplete="off" />
             <div id="suggestions0" class="suggestions-box hidden"></div>
           </div>
-          
-          <div class="grid-cols-4 mt-3">
-            <div>
-              <input list="strength-list" name="medicine_strengths" class="form-input" 
-                     placeholder="Strength" />
-            </div>
-            <div>
-              <input list="freq-list" name="medicine_frequencies" class="form-input" 
-                     placeholder="Frequency" />
-            </div>
-            <div>
-              <input list="remark-list" name="medicine_remarks" class="form-input" 
-                     placeholder="Remark" />
-            </div>
-            <div>
-              <div class="duration-container">
-                <input type="number" name="medicine_days_number" min="0" value="1" 
-                       class="form-input duration-number" placeholder="1">
-                <select name="medicine_days_unit" class="form-input duration-unit">
-                  <option value="din">দিন</option>
-                  <option value="soptaho">সপ্তাহ</option>
-                  <option value="mash">মাস</option>
-                  <option value="bosor">বছর</option>
-                  <option value="colbe">চলবে</option>
-                </select>
-              </div>
+          <div class="med-grid mt-2.5">
+            <input list="strength-list" name="medicine_strengths" class="form-input" placeholder="Strength" />
+            <input list="freq-list" name="medicine_frequencies" class="form-input bn" placeholder="Frequency" />
+            <input list="remark-list" name="medicine_remarks" class="form-input bn" placeholder="Remark" />
+            <div class="duration-container">
+              <input type="number" name="medicine_days_number" min="0" value="1" class="form-input duration-number">
+              <select name="medicine_days_unit" class="form-input duration-unit bn">
+                <option value="din">দিন</option>
+                <option value="soptaho">সপ্তাহ</option>
+                <option value="mash">মাস</option>
+                <option value="bosor">বছর</option>
+                <option value="colbe">চলবে</option>
+              </select>
             </div>
           </div>
         </div>
       </div>
-        
-      <button type="button" onclick="addMedicineField()" class="btn btn-secondary mt-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        Add Medicine
+      <button type="button" onclick="addMedicineField()" class="btn btn-ghost btn-sm mt-2.5">
+        <i class="fas fa-plus"></i> Add Medicine
       </button>
     </div>
 
-    <!-- Data Lists -->
     <datalist id="strength-list">
-      <option value="250mg"><option value="500mg">
-      <option value="5ml"><option value="10ml">
-      <option value="1g"><option value="2.5mg">
-      <option value="10mg"><option value="20mg">
+      <option value="250mg"><option value="500mg"><option value="5ml"><option value="10ml">
+      <option value="1g"><option value="2.5mg"><option value="10mg"><option value="20mg">
     </datalist>
-
     <datalist id="freq-list">
-      <option value="১+০+০"><option value="০+১+০">
-      <option value="০+০+১"><option value="১+১+০">
-      <option value="১+০+১"><option value="০+১+১">
-      <option value="১+১+১"><option value="২+০+০">
-      <option value="১+২+০"><option value="০+০+২">
-      <option value="১⁄২+১⁄২+১⁄২"><option value="১⁄২+০+১⁄২">
-      <option value="১⁄২+১⁄২+০"><option value="০+১⁄২+১⁄২">
-      <option value="১⁄২+০+০"><option value="১+১⁄২+১⁄২">
+      <option value="১+০+০"><option value="০+১+০"><option value="০+০+১"><option value="১+১+০">
+      <option value="১+০+১"><option value="০+১+১"><option value="১+১+১"><option value="২+০+০">
+      <option value="১+২+০"><option value="০+০+২"><option value="১⁄২+১⁄২+১⁄২"><option value="১⁄২+০+১⁄২">
+      <option value="১⁄২+১⁄২+০"><option value="০+১⁄২+১⁄২"><option value="১⁄২+০+০"><option value="১+১⁄২+১⁄২">
     </datalist>
-
     <datalist id="remark-list">
-      <option value="খাবার পর"><option value="খাবার আগে">
-      <option value="খালি পেটে"><option value="প্রতিদিন একই সময়ে গ্রহণ করুন">
-      <option value="খালি পেটে খাওয়া যাবে না"><option value="ব্যথা হলে">
-      <option value="ঘুমানোর আগে"><option value="নিয়মিত খাওয়া বন্ধ করা যাবে না">
+      <option value="খাবার পর"><option value="খাবার আগে"><option value="খালি পেটে">
+      <option value="প্রতিদিন একই সময়ে গ্রহণ করুন"><option value="খালি পেটে খাওয়া যাবে না">
+      <option value="ব্যথা হলে"><option value="ঘুমানোর আগে"><option value="নিয়মিত খাওয়া বন্ধ করা যাবে না">
       <option value="গ্রহণের পরপরই শোয়া যাবে না"><option value="অবশ্যই পূর্ণ কোর্স সম্পন্ন করতে হবে">
     </datalist>
 
-    <!-- Button section -->
-    <div class="flex flex-wrap justify-end gap-3 pt-6">
-      <button type="submit" name="action" value="save" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-        </svg>
-        Save
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center justify-end gap-3 pt-5 border-t border-slate-200">
+      <button type="submit" name="action" value="save" class="btn btn-ghost">
+        <i class="fas fa-floppy-disk"></i> Save only
       </button>
-      
       <button type="submit" name="action" value="save_and_download" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Save & Generate PDF
+        <i class="fas fa-file-pdf"></i> Save &amp; Generate PDF
       </button>
-
-      <button type="submit" name="action" value="next" class="btn btn-primary" style="background-color:#2563eb;">
-        Next
-        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" style="margin-right:0;margin-left:0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </button>
+      {% if appointment and appointment.status == 'in_consultation' %}
+        <button type="submit" name="action" value="save_and_next" class="btn btn-amber">
+          <i class="fas fa-forward"></i> Save &amp; Call Next Patient
+        </button>
+      {% endif %}
     </div>
   </form>
+
+  {% if prescription_count %}
+    <p class="text-center text-xs text-slate-500">
+      {{ prescription_count }} previous prescription{{ prescription_count|pluralize }} on file ·
+      <a href="{% url 'patient_profile' patient.id %}" class="font-semibold text-emerald-700 hover:underline">view history</a>
+    </p>
+  {% endif %}
 </div>
 
+{% if last_prescription_data %}
+  {{ last_prescription_data|json_script:"last-prescription-data" }}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
 <script>
-// Global variables to track field indices
-let medIdx = 0;
-let problemIdx = 0;
-let reportIdx = 0;
-let examinationIdx = 0;
+let medIdx = 0, problemIdx = 0, reportIdx = 0, examinationIdx = 0;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize autocomplete for first medicine field
-    attachAutocomplete(document.getElementById('medName0'), 0);
-    updateDurationBehavior(document.querySelector('.medicine-row'));
-    
-    // Attach autocomplete to problem field
-    const problemInput = document.querySelector('input[name="problems"]');
-    if (problemInput) {
-        problemInput.addEventListener('input', function() {
-            fetchSuggestions(this.value, 'problem', 'problems');
-        });
-    }
-    
-    // Attach autocomplete to examination field
-    const examinationInput = document.getElementById('examination_name_0');
-    if (examinationInput) {
-        examinationInput.addEventListener('input', function() {
-            fetchSuggestions(this.value, 'examination', 'examination_name_0');
-        });
-    }
-    
-    // Attach autocomplete to report name field
-    const reportInput = document.getElementById('report_name_0');
-    if (reportInput) {
-        reportInput.addEventListener('input', function() {
-            fetchSuggestions(this.value, 'report', 'report_name_0');
-        });
-    }
-    
-    // Check if we have last prescription data
-    const lastPrescription = JSON.parse('{{ last_prescription|escapejs }}' || 'null');
-    
-    if (lastPrescription) {
-        // Pre-fill problems
-        const problems = lastPrescription.problems;
-        if (problems && problems.length > 0) {
-            document.querySelector('input[name="problems"]').value = problems[0];
-            for (let i = 1; i < problems.length; i++) {
-                addProblemField(problems[i]);
-            }
-        }
-        
-        // Pre-fill examinations
-        const exams = lastPrescription.examinations;
-        if (exams && exams.length > 0) {
-            document.querySelector('input[name="examination_names"]').value = exams[0].name || '';
-            document.querySelector('input[name="examination_results"]').value = exams[0].result || '';
-            for (let i = 1; i < exams.length; i++) {
-                addExaminationField(exams[i].name || '', exams[i].result || '');
-            }
-        }
-        
-        // Pre-fill reports
-        const reports = lastPrescription.reports;
-        if (reports && reports.length > 0) {
-            document.querySelector('input[name="report_names"]').value = reports[0].name || '';
-            document.querySelector('input[name="report_results"]').value = reports[0].result || '';
-            for (let i = 1; i < reports.length; i++) {
-                addReportField(reports[i].name || '', reports[i].result || '');
-            }
-        }
-        
-        // Pre-fill medicines
-        const medicines = lastPrescription.medicines;
-        if (medicines && medicines.length > 0) {
-            document.getElementById('medName0').value = medicines[0].name || '';
-            document.querySelector('input[name="medicine_strengths"]').value = medicines[0].strength || '';
-            document.querySelector('input[name="medicine_frequencies"]').value = medicines[0].frequency || '';
-            document.querySelector('input[name="medicine_remarks"]').value = medicines[0].remark || '';
-            
-            // Set duration for first medicine
-            if (medicines[0].days || medicines[0].days === 0) {
-                const days = medicines[0].days;
-                if (days === 0) {
-                    document.querySelector('select[name="medicine_days_unit"]').value = 'colbe';
-                    const numberInput = document.querySelector('input[name="medicine_days_number"]');
-                    numberInput.readOnly = true;
-                    numberInput.value = "0";
-                } else if (days % 365 === 0) {
-                    document.querySelector('input[name="medicine_days_number"]').value = days / 365;
-                    document.querySelector('select[name="medicine_days_unit"]').value = 'bosor';
-                } else if (days % 30 === 0) {
-                    document.querySelector('input[name="medicine_days_number"]').value = days / 30;
-                    document.querySelector('select[name="medicine_days_unit"]').value = 'mash';
-                } else if (days % 7 === 0) {
-                    document.querySelector('input[name="medicine_days_number"]').value = days / 7;
-                    document.querySelector('select[name="medicine_days_unit"]').value = 'soptaho';
-                } else {
-                    document.querySelector('input[name="medicine_days_number"]').value = days;
-                    document.querySelector('select[name="medicine_days_unit"]').value = 'din';
-                }
-            }
-            
-            // Add additional medicine fields
-            for (let i = 1; i < medicines.length; i++) {
-                addMedicineField(
-                    medicines[i].name || '',
-                    medicines[i].strength || '',
-                    medicines[i].frequency || '',
-                    medicines[i].remark || '',
-                    medicines[i].days || 1
-                );
-            }
-        }
-    }
-});
-
-// Cache of the last medicine suggestions fetched per row, so the
-// All/Mine/Catalogue filter buttons can re-render instantly without
-// re-hitting the server.
+/* ---------------- Autocomplete ---------------- */
 const medicineSuggestionCache = {};
 const medicineFilterState = {};
 
-function attachAutocomplete(inputElement, index) {
-    inputElement.addEventListener('input', function() {
-        fetchSuggestions(this.value, 'medicine', index);
-    });
-    inputElement.addEventListener('focus', function() {
-        if (this.value.length >= 1) {
-            fetchSuggestions(this.value, 'medicine', index);
-        }
-    });
+function attachMedicineAutocomplete(input, index) {
+  input.addEventListener('input', function () { fetchSuggestions(this.value, 'medicine', index); });
+  input.addEventListener('focus', function () {
+    if (this.value.length >= 1) fetchSuggestions(this.value, 'medicine', index);
+  });
+}
+
+function attachTextAutocomplete(input, type, targetId) {
+  input.addEventListener('input', function () { fetchSuggestions(this.value, type, targetId); });
 }
 
 function fetchSuggestions(query, type, targetId) {
-    if (query.length < 1) {
-        hideSuggestions(type, targetId);
-        return;
-    }
-    
-    const endpoint = `/autocomplete/${type}/?q=${encodeURIComponent(query)}`;
-    
-    fetch(endpoint)
-        .then(response => response.json())
-        .then(data => {
-            if (type === 'medicine') {
-                medicineSuggestionCache[targetId] = data;
-            }
-            showSuggestions(data, type, targetId);
-        })
-        .catch(error => {
-            console.error('Error fetching suggestions:', error);
-        });
+  if (query.length < 1) { hideSuggestions(type, targetId); return; }
+  fetch('/autocomplete/' + type + '/?q=' + encodeURIComponent(query))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (type === 'medicine') medicineSuggestionCache[targetId] = data;
+      showSuggestions(data, type, targetId);
+    })
+    .catch(function (err) { console.error('Suggestion lookup failed:', err); });
 }
 
-// Converts a "days" integer into the {number, unit} pair used by the
-// duration selector. Shared by the initial "last prescription" prefill,
-// the "add medicine" row builder, and the autocomplete auto-fill below.
+// "days" <-> {number, unit} for the duration selector.
 function daysToNumberUnit(days) {
-    if (days === null || days === undefined) return null;
-    if (days === 0) return { number: '0', unit: 'colbe' };
-    if (days % 365 === 0) return { number: (days / 365).toString(), unit: 'bosor' };
-    if (days % 30 === 0) return { number: (days / 30).toString(), unit: 'mash' };
-    if (days % 7 === 0) return { number: (days / 7).toString(), unit: 'soptaho' };
-    return { number: days.toString(), unit: 'din' };
+  if (days === null || days === undefined) return null;
+  if (days === 0) return { number: '0', unit: 'colbe' };
+  if (days % 365 === 0) return { number: String(days / 365), unit: 'bosor' };
+  if (days % 30 === 0) return { number: String(days / 30), unit: 'mash' };
+  if (days % 7 === 0) return { number: String(days / 7), unit: 'soptaho' };
+  return { number: String(days), unit: 'din' };
 }
 
-// When a medicine is chosen from suggestions, fill in its previously-used
-// strength/frequency/remark/duration too -- but only into fields the
-// doctor hasn't already typed something into, so we never clobber
-// deliberate edits.
-function applyMedicineDetailsToRow(inputElement, item) {
-    const row = inputElement.closest('.medicine-row');
-    if (!row || item.source !== 'history') return;
+// Picking a previously-used medicine fills in the rest of the row, but never
+// overwrites something the doctor already typed.
+function applyMedicineDetailsToRow(input, item) {
+  const row = input.closest('.medicine-row');
+  if (!row || item.source !== 'history') return;
 
-    const strengthInput = row.querySelector('input[name="medicine_strengths"]');
-    const frequencyInput = row.querySelector('input[name="medicine_frequencies"]');
-    const remarkInput = row.querySelector('input[name="medicine_remarks"]');
-    const numberInput = row.querySelector('input[name="medicine_days_number"]');
-    const unitSelect = row.querySelector('select[name="medicine_days_unit"]');
+  const strength = row.querySelector('input[name="medicine_strengths"]');
+  const frequency = row.querySelector('input[name="medicine_frequencies"]');
+  const remark = row.querySelector('input[name="medicine_remarks"]');
+  const number = row.querySelector('input[name="medicine_days_number"]');
+  const unit = row.querySelector('select[name="medicine_days_unit"]');
 
-    if (strengthInput && !strengthInput.value && item.strength) strengthInput.value = item.strength;
-    if (frequencyInput && !frequencyInput.value && item.frequency) frequencyInput.value = item.frequency;
-    if (remarkInput && !remarkInput.value && item.remark) remarkInput.value = item.remark;
+  if (strength && !strength.value && item.strength) strength.value = item.strength;
+  if (frequency && !frequency.value && item.frequency) frequency.value = item.frequency;
+  if (remark && !remark.value && item.remark) remark.value = item.remark;
 
-    if (numberInput && unitSelect && (item.days || item.days === 0)) {
-        const du = daysToNumberUnit(item.days);
-        if (du) {
-            numberInput.value = du.number;
-            unitSelect.value = du.unit;
-            numberInput.readOnly = (du.unit === 'colbe');
-        }
+  if (number && unit && (item.days || item.days === 0)) {
+    const du = daysToNumberUnit(item.days);
+    if (du) {
+      number.value = du.number;
+      unit.value = du.unit;
+      number.readOnly = (du.unit === 'colbe');
     }
+  }
 }
 
-function getMedicineFilterBoxId(targetId) {
-    return `suggestions${targetId}`;
-}
+function renderMedicineSuggestions(box, input, targetId, data) {
+  const filter = medicineFilterState[targetId] || 'all';
+  const filtered = data.filter(function (item) {
+    if (filter === 'mine') return item.source === 'history';
+    if (filter === 'catalog') return item.source === 'catalog';
+    return true;
+  });
 
-function renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data) {
-    const filter = medicineFilterState[targetId] || 'all';
-    const filtered = data.filter(item => {
-        if (filter === 'mine') return item.source === 'history';
-        if (filter === 'catalog') return item.source === 'catalog';
-        return true;
+  const hasHistory = data.some(function (i) { return i.source === 'history'; });
+  const hasCatalog = data.some(function (i) { return i.source === 'catalog'; });
+
+  box.innerHTML = '';
+
+  if (hasHistory && hasCatalog) {
+    const bar = document.createElement('div');
+    bar.className = 'suggestions-filter';
+    [['all', 'All'], ['mine', 'My Medicines'], ['catalog', 'Catalogue']].forEach(function (pair) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = pair[1];
+      btn.className = pair[0] === filter ? 'active' : '';
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        medicineFilterState[targetId] = pair[0];
+        renderMedicineSuggestions(box, input, targetId, data);
+      });
+      bar.appendChild(btn);
     });
+    box.appendChild(bar);
+  }
 
-    const hasHistory = data.some(i => i.source === 'history');
-    const hasCatalog = data.some(i => i.source === 'catalog');
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'suggestion-item';
+    empty.textContent = 'No matches in this filter';
+    box.appendChild(empty);
+    box.classList.remove('hidden');
+    return;
+  }
 
-    suggestionsBox.innerHTML = '';
+  filtered.forEach(function (item) {
+    const el = document.createElement('div');
+    el.className = 'suggestion-item';
 
-    // Only show the filter bar when there's actually a mix to filter.
-    if (hasHistory && hasCatalog) {
-        const filterBar = document.createElement('div');
-        filterBar.className = 'suggestions-filter';
-        [['all', 'All'], ['mine', 'My Medicines'], ['catalog', 'Catalogue']].forEach(([key, label]) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = label;
-            btn.className = key === filter ? 'active' : '';
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                medicineFilterState[targetId] = key;
-                renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data);
-            });
-            filterBar.appendChild(btn);
-        });
-        suggestionsBox.appendChild(filterBar);
+    const main = document.createElement('div');
+    main.className = 'suggestion-main';
+    const name = document.createElement('span');
+    name.className = 'suggestion-name';
+    name.textContent = item.name;
+    main.appendChild(name);
+
+    if (item.source === 'history' && (item.strength || item.frequency)) {
+      const sub = document.createElement('span');
+      sub.className = 'suggestion-sub';
+      sub.textContent = [item.strength, item.frequency].filter(Boolean).join(' · ');
+      main.appendChild(sub);
     }
+    el.appendChild(main);
 
-    if (filtered.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'suggestion-item';
-        empty.textContent = 'No matches in this filter';
-        suggestionsBox.appendChild(empty);
-        suggestionsBox.classList.remove('hidden');
-        return;
+    const badge = document.createElement('span');
+    if (item.source === 'history') {
+      badge.className = 'suggestion-badge history';
+      badge.textContent = 'Used ' + item.count + 'x';
+    } else {
+      badge.className = 'suggestion-badge catalog';
+      badge.textContent = 'Catalogue';
     }
+    el.appendChild(badge);
 
-    filtered.forEach(item => {
-        const suggestionItem = document.createElement('div');
-        suggestionItem.className = 'suggestion-item';
-
-        const main = document.createElement('div');
-        main.className = 'suggestion-main';
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'suggestion-name';
-        nameEl.textContent = item.name;
-        main.appendChild(nameEl);
-
-        if (item.source === 'history' && (item.strength || item.frequency)) {
-            const subEl = document.createElement('span');
-            subEl.className = 'suggestion-sub';
-            subEl.textContent = [item.strength, item.frequency].filter(Boolean).join(' · ');
-            main.appendChild(subEl);
-        }
-
-        suggestionItem.appendChild(main);
-
-        const badge = document.createElement('span');
-        if (item.source === 'history') {
-            badge.className = 'suggestion-badge history';
-            badge.textContent = `Used ${item.count}x`;
-        } else {
-            badge.className = 'suggestion-badge catalog';
-            badge.textContent = 'Catalogue';
-        }
-        suggestionItem.appendChild(badge);
-
-        suggestionItem.addEventListener('click', function() {
-            inputElement.value = item.name;
-            applyMedicineDetailsToRow(inputElement, item);
-            suggestionsBox.classList.add('hidden');
-            inputElement.focus();
-        });
-        suggestionsBox.appendChild(suggestionItem);
+    el.addEventListener('click', function () {
+      input.value = item.name;
+      applyMedicineDetailsToRow(input, item);
+      box.classList.add('hidden');
+      input.focus();
     });
+    box.appendChild(el);
+  });
 
-    suggestionsBox.classList.remove('hidden');
+  box.classList.remove('hidden');
+}
+
+function inputForTarget(type, targetId) {
+  if (type === 'medicine') return document.getElementById('medName' + targetId);
+  if (type === 'problem') return document.getElementById(targetId);
+  if (type === 'report') return document.getElementById(targetId);
+  if (type === 'examination') return document.getElementById(targetId);
+  return null;
 }
 
 function showSuggestions(data, type, targetId) {
-    let suggestionsBox;
-    const inputElement = type === 'medicine' ? document.getElementById(`medName${targetId}`) : 
-                         type === 'problem' ? document.querySelector('input[name="problems"]') :
-                         type === 'report' ? document.getElementById(`report_name_${targetId}`) :
-                         type === 'examination' ? document.getElementById(`examination_name_${targetId}`) : null;
-    
-    if (!inputElement) {
-        console.error(`Input element not found for ${type} with targetId ${targetId}`);
-        return;
-    }
+  const input = inputForTarget(type, targetId);
+  if (!input) return;
 
-    if (type === 'medicine') {
-        suggestionsBox = document.getElementById(getMedicineFilterBoxId(targetId));
-    } else {
-        const boxId = `${type}-suggestions-${targetId}`;
-        suggestionsBox = document.getElementById(boxId);
-        
-        if (!suggestionsBox) {
-            suggestionsBox = document.createElement('div');
-            suggestionsBox.id = boxId;
-            suggestionsBox.className = 'suggestions-box';
-            inputElement.parentNode.appendChild(suggestionsBox);
-        }
+  let box;
+  if (type === 'medicine') {
+    box = document.getElementById('suggestions' + targetId);
+  } else {
+    const boxId = type + '-suggestions-' + targetId;
+    box = document.getElementById(boxId);
+    if (!box) {
+      box = document.createElement('div');
+      box.id = boxId;
+      box.className = 'suggestions-box';
+      input.parentNode.appendChild(box);
     }
-    
-    if (!suggestionsBox) return;
-    
-    if (data.length === 0) {
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.classList.add('hidden');
-        return;
-    }
+  }
+  if (!box) return;
 
-    if (type === 'medicine') {
-        renderMedicineSuggestions(suggestionsBox, inputElement, targetId, data);
-        return;
-    }
+  if (!data.length) { box.innerHTML = ''; box.classList.add('hidden'); return; }
 
-    suggestionsBox.innerHTML = '';
+  if (type === 'medicine') { renderMedicineSuggestions(box, input, targetId, data); return; }
 
-    data.forEach(item => {
-        const suggestionItem = document.createElement('div');
-        suggestionItem.className = 'suggestion-item';
-        // Problem/report/examination suggestions carry a usage "count".
-        suggestionItem.textContent = (item.count !== undefined && item.count !== null)
-            ? `${item.name} (${item.count})`
-            : item.name;
-        suggestionItem.addEventListener('click', function() {
-            inputElement.value = item.name;
-            suggestionsBox.classList.add('hidden');
-            inputElement.focus();
-        });
-        suggestionsBox.appendChild(suggestionItem);
+  box.innerHTML = '';
+  data.forEach(function (item) {
+    const el = document.createElement('div');
+    el.className = 'suggestion-item';
+    el.textContent = (item.count !== undefined && item.count !== null)
+      ? item.name + ' (' + item.count + ')' : item.name;
+    el.addEventListener('click', function () {
+      input.value = item.name;
+      box.classList.add('hidden');
+      input.focus();
     });
-    
-    suggestionsBox.classList.remove('hidden');
+    box.appendChild(el);
+  });
+  box.classList.remove('hidden');
 }
 
 function hideSuggestions(type, targetId) {
-    let suggestionsBox;
-    
-    if (type === 'medicine') {
-        suggestionsBox = document.getElementById(`suggestions${targetId}`);
-    } else if (type === 'problem') {
-        suggestionsBox = document.getElementById('problem-suggestions');
-    } else if (type === 'report') {
-        suggestionsBox = document.getElementById(`report-suggestions-${targetId}`);
-    } else if (type === 'examination') {
-        suggestionsBox = document.getElementById(`examination-suggestions-${targetId}`);
-    }
-    
-    if (suggestionsBox) {
-        suggestionsBox.classList.add('hidden');
-    }
+  const box = type === 'medicine'
+    ? document.getElementById('suggestions' + targetId)
+    : document.getElementById(type + '-suggestions-' + targetId);
+  if (box) box.classList.add('hidden');
 }
 
-function addProblemField(value = '') {
-    problemIdx++;
-    const div = document.getElementById("problems");
-    div.insertAdjacentHTML("beforeend", `
-        <div class="relative mt-3">
-            <input type="text" name="problems" id="problem_${problemIdx}" class="form-input autocomplete" 
-                   placeholder="Enter patient problems" value="${value}" />
-        </div>`
-    );
-    
-    // Attach autocomplete to the new field
-    const input = document.getElementById(`problem_${problemIdx}`);
-    input.addEventListener('input', function() {
-        fetchSuggestions(this.value, 'problem', `problem_${problemIdx}`);
+/* ---------------- Dynamic rows ---------------- */
+function removeRow(button) {
+  const row = button.closest('.medicine-row') || button.closest('.pair-grid');
+  if (!row) return;
+  const container = row.parentNode;
+  if (container.children.length > 1) {
+    row.remove();
+  } else {
+    // Never leave a section with zero rows — just clear the last one.
+    row.querySelectorAll('input').forEach(function (i) {
+      if (i.type !== 'number') i.value = '';
     });
+  }
 }
 
-function addExaminationField(name = '', result = '') {
-    examinationIdx++;
-    const div = document.getElementById("examinations");
-    div.insertAdjacentHTML("beforeend", `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            <div class="relative">
-                <input type="text" name="examination_names" id="examination_name_${examinationIdx}" 
-                       class="form-input autocomplete" placeholder="Examination Name" value="${name}" />
-            </div>
-            <input type="text" name="examination_results" class="form-input" 
-                   placeholder="Examination Result" value="${result}" />
-        </div>`
-    );
-    
-    // Attach autocomplete to the new examination name field
-    const input = document.getElementById(`examination_name_${examinationIdx}`);
-    input.addEventListener('input', function() {
-        fetchSuggestions(this.value, 'examination', `examination_name_${examinationIdx}`);
-    });
+function addProblemField(value) {
+  problemIdx++;
+  const id = 'problem_' + problemIdx;
+  document.getElementById('problems').insertAdjacentHTML('beforeend',
+    '<div class="pair-grid">' +
+      '<div class="relative" style="grid-column: span 2;">' +
+        '<input type="text" name="problems" id="' + id + '" class="form-input autocomplete" ' +
+        'placeholder="Enter patient problem" autocomplete="off" value="' + escapeAttr(value) + '" />' +
+      '</div>' +
+      '<button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">' +
+        '<i class="fas fa-trash"></i></button>' +
+    '</div>');
+  attachTextAutocomplete(document.getElementById(id), 'problem', id);
 }
 
-function addReportField(name = '', result = '') {
-    reportIdx++;
-    const div = document.getElementById("reports");
-    div.insertAdjacentHTML("beforeend", `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            <div class="relative">
-                <input type="text" name="report_names" id="report_name_${reportIdx}" 
-                       class="form-input autocomplete" placeholder="Report Name" value="${name}" />
-            </div>
-            <input type="text" name="report_results" class="form-input" 
-                   placeholder="Report Result" value="${result}" />
-        </div>`
-    );
-    
-    // Attach autocomplete to the new report name field
-    const input = document.getElementById(`report_name_${reportIdx}`);
-    input.addEventListener('input', function() {
-        fetchSuggestions(this.value, 'report', `report_name_${reportIdx}`);
-    });
+function addExaminationField(name, result) {
+  examinationIdx++;
+  const id = 'examination_name_' + examinationIdx;
+  document.getElementById('examinations').insertAdjacentHTML('beforeend',
+    '<div class="pair-grid">' +
+      '<div class="relative">' +
+        '<input type="text" name="examination_names" id="' + id + '" class="form-input autocomplete" ' +
+        'placeholder="Examination Name" autocomplete="off" value="' + escapeAttr(name) + '" />' +
+      '</div>' +
+      '<input type="text" name="examination_results" class="form-input" placeholder="Examination Result" value="' + escapeAttr(result) + '" />' +
+      '<button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">' +
+        '<i class="fas fa-trash"></i></button>' +
+    '</div>');
+  attachTextAutocomplete(document.getElementById(id), 'examination', id);
+}
+
+function addReportField(name, result) {
+  reportIdx++;
+  const id = 'report_name_' + reportIdx;
+  document.getElementById('reports').insertAdjacentHTML('beforeend',
+    '<div class="pair-grid">' +
+      '<div class="relative">' +
+        '<input type="text" name="report_names" id="' + id + '" class="form-input autocomplete" ' +
+        'placeholder="Report Name" autocomplete="off" value="' + escapeAttr(name) + '" />' +
+      '</div>' +
+      '<input type="text" name="report_results" class="form-input" placeholder="Report Result" value="' + escapeAttr(result) + '" />' +
+      '<button type="button" class="row-remove" style="position:static;" onclick="removeRow(this)" title="Remove">' +
+        '<i class="fas fa-trash"></i></button>' +
+    '</div>');
+  attachTextAutocomplete(document.getElementById(id), 'report', id);
 }
 
 function updateDurationBehavior(row) {
-    const numberInput = row.querySelector('input[name="medicine_days_number"]');
-    const unitSelect = row.querySelector('select[name="medicine_days_unit"]');
-    
-    function handleUnitChange() {
-        if (unitSelect.value === "colbe") {
-            numberInput.readOnly = true;
-            numberInput.value = "0";     // submit হবে
-        } else {
-            numberInput.readOnly = false;
-            if (!numberInput.value || numberInput.value === "0") numberInput.value = "1";
-        }
+  const number = row.querySelector('input[name="medicine_days_number"]');
+  const unit = row.querySelector('select[name="medicine_days_unit"]');
+  if (!number || !unit) return;
+
+  function sync() {
+    if (unit.value === 'colbe') {
+      number.readOnly = true;
+      number.value = '0';
+    } else {
+      number.readOnly = false;
+      if (!number.value || number.value === '0') number.value = '1';
     }
-    
-    handleUnitChange();
-    unitSelect.addEventListener('change', handleUnitChange);
+  }
+  sync();
+  unit.addEventListener('change', sync);
 }
 
-function addMedicineField(name = '', strength = '', frequency = '', remark = '', days = 1, unit = 'din') {
-    medIdx++;
-    const div = document.getElementById("medicines");
-    
-    // Convert old days format to new number+unit
-    let initialNumber = "1";
-    let initialUnit = 'din';
-    
-    if (days || days === 0) {
-        if (days === 0) {
-            initialUnit = 'colbe';
-            initialNumber = "0";
-        } else if (days % 365 === 0) {
-            initialNumber = (days / 365).toString();
-            initialUnit = 'bosor';
-        } else if (days % 30 === 0) {
-            initialNumber = (days / 30).toString();
-            initialUnit = 'mash';
-        } else if (days % 7 === 0) {
-            initialNumber = (days / 7).toString();
-            initialUnit = 'soptaho';
-        } else {
-            initialNumber = days.toString();
-            initialUnit = 'din';
-        }
-    }
-    
-    div.insertAdjacentHTML("beforeend", `
-        <div class="medicine-row">
-            <div class="relative">
-                <input type="text" name="medicine_names" id="medName${medIdx}" class="form-input autocomplete" 
-                       placeholder="Medicine Name" autocomplete="off" value="${name}" />
-                <div id="suggestions${medIdx}" class="suggestions-box hidden"></div>
-            </div>
-            
-            <div class="grid-cols-4 mt-3">
-                <div>
-                    <input list="strength-list" name="medicine_strengths" class="form-input" 
-                           placeholder="Strength" value="${strength}" />
-                </div>
-                <div>
-                    <input list="freq-list" name="medicine_frequencies" class="form-input" 
-                           placeholder="Frequency" value="${frequency}" />
-                </div>
-                <div>
-                    <input list="remark-list" name="medicine_remarks" class="form-input" 
-                           placeholder="Remark" value="${remark}" />
-                </div>
-                <div>
-                    <div class="duration-container">
-                        <input type="number" name="medicine_days_number" min="0" value="${initialNumber}" 
-                               class="form-input duration-number" placeholder="1" ${initialUnit === 'colbe' ? 'readonly' : ''}>
-                        <select name="medicine_days_unit" class="form-input duration-unit">
-                            <option value="din" ${initialUnit === 'din' ? 'selected' : ''}>দিন</option>
-                            <option value="soptaho" ${initialUnit === 'soptaho' ? 'selected' : ''}>সপ্তাহ</option>
-                            <option value="mash" ${initialUnit === 'mash' ? 'selected' : ''}>মাস</option>
-                            <option value="bosor" ${initialUnit === 'bosor' ? 'selected' : ''}>বছর</option>
-                            <option value="colbe" ${initialUnit === 'colbe' ? 'selected' : ''}>চলবে</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>`
-    );
-    
-    // Attach autocomplete to the new medicine field
-    attachAutocomplete(document.getElementById(`medName${medIdx}`), medIdx);
-    
-    // Update duration behavior for the new row
-    const newRow = div.lastElementChild;
-    updateDurationBehavior(newRow);
+function addMedicineField(name, strength, frequency, remark, days) {
+  medIdx++;
+  const du = daysToNumberUnit(days === undefined ? 1 : days) || { number: '1', unit: 'din' };
+  const units = [['din', 'দিন'], ['soptaho', 'সপ্তাহ'], ['mash', 'মাস'], ['bosor', 'বছর'], ['colbe', 'চলবে']];
+  const options = units.map(function (u) {
+    return '<option value="' + u[0] + '"' + (du.unit === u[0] ? ' selected' : '') + '>' + u[1] + '</option>';
+  }).join('');
+
+  document.getElementById('medicines').insertAdjacentHTML('beforeend',
+    '<div class="medicine-row">' +
+      '<button type="button" class="row-remove" onclick="removeRow(this)" title="Remove"><i class="fas fa-trash"></i></button>' +
+      '<div class="relative pr-8">' +
+        '<input type="text" name="medicine_names" id="medName' + medIdx + '" class="form-input autocomplete" ' +
+        'placeholder="Medicine Name" autocomplete="off" value="' + escapeAttr(name) + '" />' +
+        '<div id="suggestions' + medIdx + '" class="suggestions-box hidden"></div>' +
+      '</div>' +
+      '<div class="med-grid mt-2.5">' +
+        '<input list="strength-list" name="medicine_strengths" class="form-input" placeholder="Strength" value="' + escapeAttr(strength) + '" />' +
+        '<input list="freq-list" name="medicine_frequencies" class="form-input bn" placeholder="Frequency" value="' + escapeAttr(frequency) + '" />' +
+        '<input list="remark-list" name="medicine_remarks" class="form-input bn" placeholder="Remark" value="' + escapeAttr(remark) + '" />' +
+        '<div class="duration-container">' +
+          '<input type="number" name="medicine_days_number" min="0" value="' + du.number + '" class="form-input duration-number"' +
+          (du.unit === 'colbe' ? ' readonly' : '') + '>' +
+          '<select name="medicine_days_unit" class="form-input duration-unit bn">' + options + '</select>' +
+        '</div>' +
+      '</div>' +
+    '</div>');
+
+  attachMedicineAutocomplete(document.getElementById('medName' + medIdx), medIdx);
+  updateDurationBehavior(document.getElementById('medicines').lastElementChild);
 }
 
-// Close suggestions when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.classList.contains('autocomplete') && 
-        !e.target.classList.contains('suggestion-item')) {
-        document.querySelectorAll('.suggestions-box').forEach(box => {
-            box.classList.add('hidden');
-        });
-    }
+function escapeAttr(value) {
+  if (value === undefined || value === null) return '';
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ---------------- Boot ---------------- */
+document.addEventListener('DOMContentLoaded', function () {
+  attachMedicineAutocomplete(document.getElementById('medName0'), 0);
+  updateDurationBehavior(document.querySelector('.medicine-row'));
+  attachTextAutocomplete(document.getElementById('problem_0'), 'problem', 'problem_0');
+  attachTextAutocomplete(document.getElementById('examination_name_0'), 'examination', 'examination_name_0');
+  attachTextAutocomplete(document.getElementById('report_name_0'), 'report', 'report_name_0');
+
+  const files = document.getElementById('report_images');
+  const count = document.getElementById('image-count');
+  files.addEventListener('change', function () {
+    if (!this.files.length) { count.classList.add('hidden'); return; }
+    count.textContent = this.files.length + ' image' + (this.files.length > 1 ? 's' : '') + ' selected';
+    count.classList.remove('hidden');
+  });
+
+  // "Copy last Rx" pre-fills every section from the patient's previous visit.
+  const dataEl = document.getElementById('last-prescription-data');
+  const loadBtn = document.getElementById('load-last');
+  if (dataEl && loadBtn) {
+    loadBtn.addEventListener('click', function () {
+      const last = JSON.parse(dataEl.textContent);
+
+      fillSection('problems', last.problems || [], function (value, first) {
+        if (first) document.getElementById('problem_0').value = value;
+        else addProblemField(value);
+      });
+      fillSection('examinations', last.examinations || [], function (item, first) {
+        if (first) {
+          document.getElementById('examination_name_0').value = item.name || '';
+          document.querySelector('input[name="examination_results"]').value = item.result || '';
+        } else addExaminationField(item.name, item.result);
+      });
+      fillSection('reports', last.reports || [], function (item, first) {
+        if (first) {
+          document.getElementById('report_name_0').value = item.name || '';
+          document.querySelector('input[name="report_results"]').value = item.result || '';
+        } else addReportField(item.name, item.result);
+      });
+      fillSection('medicines', last.medicines || [], function (m, first) {
+        if (first) {
+          const row = document.querySelector('.medicine-row');
+          document.getElementById('medName0').value = m.name || '';
+          row.querySelector('input[name="medicine_strengths"]').value = m.strength || '';
+          row.querySelector('input[name="medicine_frequencies"]').value = m.frequency || '';
+          row.querySelector('input[name="medicine_remarks"]').value = m.remark || '';
+          const du = daysToNumberUnit(m.days);
+          if (du) {
+            row.querySelector('input[name="medicine_days_number"]').value = du.number;
+            row.querySelector('select[name="medicine_days_unit"]').value = du.unit;
+          }
+        } else addMedicineField(m.name, m.strength, m.frequency, m.remark, m.days);
+      });
+
+      loadBtn.disabled = true;
+      loadBtn.innerHTML = '<i class="fas fa-check"></i> Copied';
+    });
+  }
+
+  function fillSection(containerId, items, apply) {
+    items.forEach(function (item, i) { apply(item, i === 0); });
+  }
+});
+
+// Close any open suggestion list when clicking elsewhere.
+document.addEventListener('click', function (e) {
+  if (!e.target.classList.contains('autocomplete') && !e.target.closest('.suggestions-box')) {
+    document.querySelectorAll('.suggestions-box').forEach(function (box) { box.classList.add('hidden'); });
+  }
 });
 </script>
-
 {% endblock %}

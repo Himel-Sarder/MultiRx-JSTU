@@ -1,273 +1,263 @@
 {% extends 'app/base.html' %}
 {% load custom_filters %}
-{% block content %}
-<style>
-  body {
-    background-image: linear-gradient(rgba(240, 255, 240, 0.6), rgba(240, 255, 240, 0.56)),
-                     url('https://i.postimg.cc/YC8nFr9f/8.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    min-height: 100vh;
-  }
-</style>
+{% block title %}Patients{% endblock %}
+{% block page_title %}{% if user.is_receptionist %}Existing Patients{% else %}My Patients{% endif %}{% endblock %}
+{% block page_subtitle %}{{ search_count }} of {{ total_count }} record{{ total_count|pluralize }} shown{% endblock %}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="mb-8 gap-6">
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Patient Search</h2>
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-      <p class="text-gray-600">
-        Total patients: <span class="font-semibold text-green-600">{{ total_count }}</span>
-        {% if query %}
-          | Found <span class="font-semibold text-green-600">{{ search_count }}</span> matching "{{ query }}"
-        {% endif %}
-      </p>
-      {% if results %}
-      <a href="{% url 'export_excel' %}?{{ request.GET.urlencode }}"
-         class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm">
-        <i class="fas fa-file-excel mr-2"></i> Export to Excel
-      </a>
+{% block actions %}
+  <a href="{% url 'export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-ghost btn-sm">
+    <i class="fas fa-file-excel text-emerald-600"></i> <span class="hidden sm:inline">Export</span>
+  </a>
+  {% if user.is_receptionist %}
+    <a href="{% url 'reception_new_patient' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-user-plus"></i> <span class="hidden sm:inline">New Patient</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-group { border-top: 1px solid #e2e8f0; padding-top: 1rem; margin-top: 1rem; }
+  .filter-group:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .filter-title {
+    font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+    color: #94a3b8; margin-bottom: .6rem;
+  }
+  .check-line { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: #334155; padding: .15rem 0; }
+  .check-line input { accent-color: #059669; width: .95rem; height: .95rem; }
+  .patient-card { transition: all .18s ease; }
+  .patient-card:hover { border-color: #6ee7b7; box-shadow: 0 10px 24px -14px rgba(15,23,42,.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid lg:grid-cols-4 gap-6">
+
+  <!-- ===== Filters ===== -->
+  <form method="get" id="filter-form" class="lg:col-span-1 space-y-4">
+    <div class="card card-pad">
+      <label class="field-label" for="q">Search</label>
+      <div class="relative">
+        <input type="text" name="q" id="q" value="{{ query }}" class="form-input pr-9"
+               placeholder="Name, phone, P0001, Pres12…" autocomplete="off">
+        <i class="fas fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+      </div>
+      <button type="submit" class="btn btn-primary w-full mt-3">Apply filters</button>
+      {% if request.GET %}
+        <a href="{% url 'search' %}" class="btn btn-ghost w-full mt-2">Clear all</a>
       {% endif %}
     </div>
-  </div>
 
-  <div class="bg-white rounded-lg shadow-md p-6 mb-8 bg-opacity-90">
-    <form method="get" action="{% url 'search' %}" class="flex mb-4">
-      <div class="relative flex-grow">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <i class="fas fa-search text-gray-400"></i>
-        </div>
-        <input type="text" name="q" value="{{ query }}" placeholder="Search by name, problem, medicine..."
-               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-      </div>
-      <button type="submit" 
-              class="px-6 py-3 bg-green-600 text-white font-medium rounded-r-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-        Search
-      </button>
-    </form>
-
-    <!-- Research data filters (Demographics, Education/Social, Clinical History, KRT & Medications) -->
-    <details class="border-t pt-4" {% if selected_filters.gender or selected_filters.age_min or selected_filters.age_max or selected_filters.registered_from or selected_filters.registered_to or selected_filters.education_level or selected_filters.employment_status or selected_filters.smoking_status or selected_filters.diagnosis or selected_filters.krt_modality or selected_filters.vascular_access_type or selected_filters.krt_initiation_from or selected_filters.krt_initiation_to or selected_filters.diabetes or selected_filters.hypertension or selected_filters.heart_failure or selected_filters.ischemic_heart_disease or selected_filters.peripheral_artery_disease or selected_filters.stroke or selected_filters.med_esa or selected_filters.med_iron or selected_filters.med_phosphate_binders or selected_filters.med_vitamin_d or selected_filters.med_calcimimetics or selected_filters.med_ace_arb or selected_filters.med_diuretics or selected_filters.med_statins or selected_filters.med_immunosuppressives %}open{% endif %}>
-      <summary class="cursor-pointer text-sm font-semibold text-gray-700 mb-3">
-        <i class="fas fa-filter mr-1"></i> Advanced Filters (Demographics, Education, Clinical History, KRT &amp; Medications)
-      </summary>
-      <form method="get" action="{% url 'search' %}" class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-2">
-        <input type="hidden" name="q" value="{{ query }}">
-
-        <!-- Demographics -->
+    <details class="card card-pad" {% if selected_filters.gender or selected_filters.age_min or selected_filters.age_max %}open{% endif %}>
+      <summary class="filter-title cursor-pointer select-none">Demographics</summary>
+      <div class="mt-3 space-y-3">
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Gender</label>
-          <select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="gender">Gender</label>
+          <select name="gender" id="gender" class="form-input">
             <option value="">Any</option>
             {% for value, label in gender_choices %}
               <option value="{{ value }}" {% if selected_filters.gender == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Age Range</label>
-          <div class="flex items-center gap-2">
-            <input type="number" name="age_min" min="0" value="{{ selected_filters.age_min }}" placeholder="Min"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-            <span class="text-gray-400">-</span>
-            <input type="number" name="age_max" min="0" value="{{ selected_filters.age_max }}" placeholder="Max"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="field-label" for="age_min">Age from</label>
+            <input type="number" name="age_min" id="age_min" min="0" class="form-input" value="{{ selected_filters.age_min|default:'' }}">
+          </div>
+          <div>
+            <label class="field-label" for="age_max">to</label>
+            <input type="number" name="age_max" id="age_max" min="0" class="form-input" value="{{ selected_filters.age_max|default:'' }}">
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Registered From</label>
-          <input type="date" name="registered_from" value="{{ selected_filters.registered_from }}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="field-label" for="registered_from">Registered from</label>
+            <input type="date" name="registered_from" id="registered_from" class="form-input" value="{{ selected_filters.registered_from|default:'' }}">
+          </div>
+          <div>
+            <label class="field-label" for="registered_to">to</label>
+            <input type="date" name="registered_to" id="registered_to" class="form-input" value="{{ selected_filters.registered_to|default:'' }}">
+          </div>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Registered To</label>
-          <input type="date" name="registered_to" value="{{ selected_filters.registered_to }}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-        </div>
+      </div>
+    </details>
 
-        <!-- Education / Social -->
+    <details class="card card-pad">
+      <summary class="filter-title cursor-pointer select-none">Social &amp; Clinical</summary>
+      <div class="mt-3 space-y-3">
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Education Level</label>
-          <select name="education_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="education_level">Education</label>
+          <select name="education_level" id="education_level" class="form-input">
             {% for value, label in education_choices %}
               <option value="{{ value }}" {% if selected_filters.education_level == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Employment Status</label>
-          <select name="employment_status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="employment_status">Employment</label>
+          <select name="employment_status" id="employment_status" class="form-input">
             {% for value, label in employment_choices %}
               <option value="{{ value }}" {% if selected_filters.employment_status == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Smoking Status</label>
-          <select name="smoking_status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="smoking_status">Smoking</label>
+          <select name="smoking_status" id="smoking_status" class="form-input">
             {% for value, label in smoking_choices %}
               <option value="{{ value }}" {% if selected_filters.smoking_status == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Diagnosis</label>
-          <input type="text" name="diagnosis" value="{{ selected_filters.diagnosis }}" placeholder="e.g. Diabetic nephropathy"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="diagnosis">Diagnosis contains</label>
+          <input type="text" name="diagnosis" id="diagnosis" class="form-input" value="{{ selected_filters.diagnosis|default:'' }}">
         </div>
-
-        <div class="md:col-span-4">
-          <label class="block text-xs font-medium text-gray-600 mb-2">Comorbidities</label>
-          <div class="flex flex-wrap gap-4 text-sm text-gray-700">
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="diabetes" value="1" {% if selected_filters.diabetes == '1' %}checked{% endif %}> Diabetes</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="hypertension" value="1" {% if selected_filters.hypertension == '1' %}checked{% endif %}> Hypertension</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="heart_failure" value="1" {% if selected_filters.heart_failure == '1' %}checked{% endif %}> Heart Failure</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="ischemic_heart_disease" value="1" {% if selected_filters.ischemic_heart_disease == '1' %}checked{% endif %}> Ischemic Heart Disease</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="peripheral_artery_disease" value="1" {% if selected_filters.peripheral_artery_disease == '1' %}checked{% endif %}> Peripheral Artery Disease</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="stroke" value="1" {% if selected_filters.stroke == '1' %}checked{% endif %}> Stroke</label>
-          </div>
-        </div>
-
-        <!-- KRT -->
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">KRT Modality</label>
-          <select name="krt_modality" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <p class="filter-title mt-2">Comorbidities</p>
+          <label class="check-line"><input type="checkbox" name="diabetes" value="1" {% if selected_filters.diabetes == '1' %}checked{% endif %}> Diabetes</label>
+          <label class="check-line"><input type="checkbox" name="hypertension" value="1" {% if selected_filters.hypertension == '1' %}checked{% endif %}> Hypertension</label>
+          <label class="check-line"><input type="checkbox" name="heart_failure" value="1" {% if selected_filters.heart_failure == '1' %}checked{% endif %}> Heart Failure</label>
+          <label class="check-line"><input type="checkbox" name="ischemic_heart_disease" value="1" {% if selected_filters.ischemic_heart_disease == '1' %}checked{% endif %}> Ischemic Heart Disease</label>
+          <label class="check-line"><input type="checkbox" name="peripheral_artery_disease" value="1" {% if selected_filters.peripheral_artery_disease == '1' %}checked{% endif %}> Peripheral Artery Disease</label>
+          <label class="check-line"><input type="checkbox" name="stroke" value="1" {% if selected_filters.stroke == '1' %}checked{% endif %}> Stroke</label>
+        </div>
+      </div>
+    </details>
+
+    <details class="card card-pad">
+      <summary class="filter-title cursor-pointer select-none">KRT &amp; Medications</summary>
+      <div class="mt-3 space-y-3">
+        <div>
+          <label class="field-label" for="krt_modality">Modality</label>
+          <select name="krt_modality" id="krt_modality" class="form-input">
             {% for value, label in modality_choices %}
               <option value="{{ value }}" {% if selected_filters.krt_modality == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Vascular Access</label>
-          <select name="vascular_access_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <label class="field-label" for="vascular_access_type">Vascular access</label>
+          <select name="vascular_access_type" id="vascular_access_type" class="form-input">
             {% for value, label in vascular_access_choices %}
               <option value="{{ value }}" {% if selected_filters.vascular_access_type == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">KRT Initiation From</label>
-          <input type="date" name="krt_initiation_from" value="{{ selected_filters.krt_initiation_from }}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">KRT Initiation To</label>
-          <input type="date" name="krt_initiation_to" value="{{ selected_filters.krt_initiation_to }}"
-                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-        </div>
-
-        <!-- Medications -->
-        <div class="md:col-span-4">
-          <label class="block text-xs font-medium text-gray-600 mb-2">Medications</label>
-          <div class="flex flex-wrap gap-4 text-sm text-gray-700">
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_esa" value="1" {% if selected_filters.med_esa == '1' %}checked{% endif %}> ESA</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_iron" value="1" {% if selected_filters.med_iron == '1' %}checked{% endif %}> Iron</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_phosphate_binders" value="1" {% if selected_filters.med_phosphate_binders == '1' %}checked{% endif %}> Phosphate Binders</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_vitamin_d" value="1" {% if selected_filters.med_vitamin_d == '1' %}checked{% endif %}> Vitamin D</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_calcimimetics" value="1" {% if selected_filters.med_calcimimetics == '1' %}checked{% endif %}> Calcimimetics</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_ace_arb" value="1" {% if selected_filters.med_ace_arb == '1' %}checked{% endif %}> ACE Inhibitors/ARBs</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_diuretics" value="1" {% if selected_filters.med_diuretics == '1' %}checked{% endif %}> Diuretics</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_statins" value="1" {% if selected_filters.med_statins == '1' %}checked{% endif %}> Statins</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" name="med_immunosuppressives" value="1" {% if selected_filters.med_immunosuppressives == '1' %}checked{% endif %}> Immunosuppressives</label>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="field-label" for="krt_initiation_from">KRT from</label>
+            <input type="date" name="krt_initiation_from" id="krt_initiation_from" class="form-input" value="{{ selected_filters.krt_initiation_from|default:'' }}">
+          </div>
+          <div>
+            <label class="field-label" for="krt_initiation_to">to</label>
+            <input type="date" name="krt_initiation_to" id="krt_initiation_to" class="form-input" value="{{ selected_filters.krt_initiation_to|default:'' }}">
           </div>
         </div>
-
-        <div class="md:col-span-4 flex gap-3 mt-1">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Apply Filters</button>
-          <a href="{% url 'search' %}?q={{ query }}" class="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Clear Filters</a>
+        <div>
+          <p class="filter-title mt-2">On medication</p>
+          <label class="check-line"><input type="checkbox" name="med_esa" value="1" {% if selected_filters.med_esa == '1' %}checked{% endif %}> ESA</label>
+          <label class="check-line"><input type="checkbox" name="med_iron" value="1" {% if selected_filters.med_iron == '1' %}checked{% endif %}> Iron</label>
+          <label class="check-line"><input type="checkbox" name="med_phosphate_binders" value="1" {% if selected_filters.med_phosphate_binders == '1' %}checked{% endif %}> Phosphate binders</label>
+          <label class="check-line"><input type="checkbox" name="med_vitamin_d" value="1" {% if selected_filters.med_vitamin_d == '1' %}checked{% endif %}> Vitamin D</label>
+          <label class="check-line"><input type="checkbox" name="med_calcimimetics" value="1" {% if selected_filters.med_calcimimetics == '1' %}checked{% endif %}> Calcimimetics</label>
+          <label class="check-line"><input type="checkbox" name="med_ace_arb" value="1" {% if selected_filters.med_ace_arb == '1' %}checked{% endif %}> ACE inhibitors / ARBs</label>
+          <label class="check-line"><input type="checkbox" name="med_diuretics" value="1" {% if selected_filters.med_diuretics == '1' %}checked{% endif %}> Diuretics</label>
+          <label class="check-line"><input type="checkbox" name="med_statins" value="1" {% if selected_filters.med_statins == '1' %}checked{% endif %}> Statins</label>
+          <label class="check-line"><input type="checkbox" name="med_immunosuppressives" value="1" {% if selected_filters.med_immunosuppressives == '1' %}checked{% endif %}> Immunosuppressives</label>
         </div>
-      </form>
+      </div>
     </details>
-  </div>
+  </form>
 
-  {% if results %}
-  <div class="space-y-4">
+  <!-- ===== Results ===== -->
+  <div class="lg:col-span-3 space-y-4">
     {% for patient in results %}
-    <div class="bg-white rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg bg-opacity-90">
-      <div class="p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 class="text-xl font-bold text-gray-800">{{ patient.name }}</h3>
-              <span class="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded">ID: {{ patient.id | patient_id_format}}</span>
-              {% if patient.prescriptions.all %}
-                <span class="mr-3"><i class="fas fa-file-prescription mr-1"></i> Prescription: #{{ patient.prescriptions.first.id | prescription_id_format}}</span>
+      <div class="card patient-card p-5">
+        <div class="flex flex-wrap items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 font-bold flex items-center justify-center flex-shrink-0">
+            {{ patient.name|slice:":1"|upper }}
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <a href="{% url 'patient_profile' patient.id %}" class="text-lg font-bold text-slate-900 hover:text-emerald-700">
+                {{ patient.name }}
+              </a>
+              <span class="badge badge-slate">{{ patient.id|patient_id_format }}</span>
+            </div>
+            <p class="text-sm text-slate-500 mt-0.5">
+              {{ patient.age }} years · {{ patient.gender }}
+              {% if patient.phone %} · {{ patient.phone }}{% endif %}
+            </p>
+            <p class="text-sm text-slate-500"><i class="fas fa-location-dot text-xs"></i> {{ patient.address }}</p>
+
+            {% with rd=patient.research_data %}
+              {% if rd %}
+                <div class="flex flex-wrap gap-1.5 mt-2.5">
+                  {% if rd.diagnosis %}<span class="badge badge-blue">{{ rd.diagnosis|truncatechars:40 }}</span>{% endif %}
+                  {% for c in rd.comorbidities_list %}<span class="badge badge-red">{{ c }}</span>{% endfor %}
+                  {% if rd.krt_modality %}<span class="badge badge-green">{{ rd.krt_modality }}</span>{% endif %}
+                </div>
+              {% endif %}
+            {% endwith %}
+          </div>
+
+          <div class="flex flex-col items-end gap-2">
+            <span class="text-xs text-slate-400">{{ patient.created_at|date:"j M Y" }}</span>
+            <div class="flex gap-2">
+              <a href="{% url 'patient_profile' patient.id %}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-folder-open"></i> Record
+              </a>
+              {% if user.is_doctor %}
+                <a href="{% url 'prescribe_with_patient' patient.id %}" class="btn btn-primary btn-sm">
+                  <i class="fas fa-pen"></i> Prescribe
+                </a>
+              {% else %}
+                <form method="post" action="{% url 'reception_queue_patient' patient.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="doctor" value="{{ patient.doctor_id }}">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-list-ol"></i> Give Serial
+                  </button>
+                </form>
               {% endif %}
             </div>
-            <div class="flex items-center text-sm text-gray-500 mt-1">
-              <span class="mr-3"><i class="fas fa-user mr-1"></i> Age: {{ patient.age }}</span>
-              <span><i class="fas fa-map-marker-alt mr-1"></i> {{ patient.address|truncatechars:30 }}</span>
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <a href="{% url 'patient_profile' patient.id %}"
-              class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm">
-                <i class="fas fa-user mr-1"></i> Profile
-            </a>
-            <a href="{% url 'delete_patient' patient.id %}"
-              class="inline-flex items-center px-3 py-1.5 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm">
-              <i class="fas fa-trash mr-1"></i> Delete
-            </a>
           </div>
         </div>
       </div>
-    </div>
+    {% empty %}
+      <div class="card card-pad text-center py-16">
+        <i class="fas fa-user-slash text-4xl text-slate-300 mb-4"></i>
+        <h3 class="font-bold text-slate-800">No patients match your filters</h3>
+        <p class="text-sm text-slate-500 mt-1">Try clearing a filter or searching a different term.</p>
+        {% if request.GET %}
+          <a href="{% url 'search' %}" class="btn btn-ghost btn-sm mt-5">Clear filters</a>
+        {% endif %}
+      </div>
     {% endfor %}
-  </div>
 
-  {% if page_obj.has_other_pages %}
-  <div class="mt-8 flex justify-center">
-    <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-      {% if page_obj.has_previous %}
-        <a href="?{% querystring_replace page=page_obj.previous_page_number %}"
-           class="inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-          <i class="fas fa-chevron-left mr-1"></i> Previous
-        </a>
-      {% else %}
-        <span class="inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
-          <i class="fas fa-chevron-left mr-1"></i> Previous
-        </span>
-      {% endif %}
-
-      {% for num in page_obj.paginator.page_range %}
-        {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
-          {% if num == page_obj.number %}
-            <span class="inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
-              {{ num }}
-            </span>
-          {% else %}
-            <a href="?{% querystring_replace page=num %}"
-               class="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-              {{ num }}
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="flex items-center justify-between card px-5 py-3">
+        <p class="text-sm text-slate-500">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </p>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?{% querystring_replace page=page_obj.previous_page_number %}" class="btn btn-ghost btn-sm">
+              <i class="fas fa-chevron-left"></i> Previous
             </a>
           {% endif %}
-        {% endif %}
-      {% endfor %}
-
-      {% if page_obj.has_next %}
-        <a href="?{% querystring_replace page=page_obj.next_page_number %}"
-           class="inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-          Next <i class="fas fa-chevron-right ml-1"></i>
-        </a>
-      {% else %}
-        <span class="inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
-          Next <i class="fas fa-chevron-right ml-1"></i>
-        </span>
-      {% endif %}
-    </nav>
+          {% if page_obj.has_next %}
+            <a href="?{% querystring_replace page=page_obj.next_page_number %}" class="btn btn-ghost btn-sm">
+              Next <i class="fas fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
   </div>
-  {% endif %}
-
-  {% elif query %}
-  <div class="bg-white rounded-lg shadow-md p-8 text-center bg-opacity-90">
-    <div class="mx-auto max-w-md">
-      <i class="fas fa-search fa-3x text-gray-300 mb-4"></i>
-      <h3 class="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-      <p class="text-gray-500">Your search for "<span class="font-medium">{{ query }}</span>" didn't match any patients.</p>
-      <p class="text-gray-500 mt-1">Try different keywords or check your spelling.</p>
-    </div>
-  </div>
-  {% endif %}
 </div>
 {% endblock %}

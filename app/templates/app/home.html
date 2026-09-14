@@ -1,159 +1,129 @@
 {% extends 'app/base.html' %}
-{% block content %}
+{% block title %}Welcome{% endblock %}
 
-<style>
-  body {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.41), rgba(240, 253, 244, 0.53)), url('https://i.postimg.cc/bvCs3vRZ/11.jpg');
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: center;
-  }
-  .hero-section {
-    background: linear-gradient(rgba(16, 185, 129, 0.39), rgba(5, 150, 104, 0.41)), url('https://i.postimg.cc/BvsW8c93/10.jpg');
-    background-size: cover;
-    background-position: center;
-    min-height: 85vh;
-  }
-  .feature-card {
-    transition: all 0.3s ease;
-    border: 1px solid rgba(209, 213, 219, 0.69);
-    background: rgba(255, 255, 255, 0.31);
-  }
-  .feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1);
-    border-color: #a7f3d0;
-  }
-  .cta-button {
-    background: linear-gradient(to right, #10b981, #059669);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .cta-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-  }
-  .cta-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to right, #059669, #10b981);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .cta-button:hover::after {
-    opacity: 1;
-  }
-  .cta-button span {
-    position: relative;
-    z-index: 1;
-  }
-  .stat-card {
-    background: rgba(255, 255, 255, 0.42);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-  }
-  .testimonial-card {
-    background: rgba(255, 255, 255, 0.47);
-    border-left: 4px solid #10b98168;
-  }
-</style>
+{% block public_content %}
+<div class="min-h-screen flex flex-col bg-slate-50">
 
-<!-- Hero Section with Big Image -->
-<section class="hero-section flex items-center">
-  <div class="max-w-6xl mx-auto px-4 py-20 text-center">
-    <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
-      <span>MultiRx</span> Prescription Platform
-    </h1>
-    <p class="text-xl md:text-2xl text-white max-w-3xl mx-auto mb-10 opacity-90">
-      Advanced prescription management and patient care system for modern healthcare professionals
-    </p>
-    <div class="flex flex-wrap justify-center gap-4">
-      <a href="{% url 'register' %}" class="cta-button text-white font-medium py-4 px-10 rounded-xl text-lg">
-        <span>Get Started</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
+  <!-- Top bar -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <span class="text-xl font-extrabold text-slate-900">Multi<span class="text-emerald-600">Rx</span></span>
+      </div>
+      <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-right-to-bracket"></i> Sign in
       </a>
     </div>
-  </div>
-</section>
+  </header>
 
-<!-- Features Section -->
-<section class="py-20 px-4">
-  <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-16">
-      <h2 class="text-4xl font-bold text-gray-900 mb-4">Streamline Your Medical Practice</h2>
-      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-        MultiRx combines powerful prescription management with intuitive patient care tools
+  <!-- Hero -->
+  <section class="relative overflow-hidden" style="background: linear-gradient(160deg,#064e3b 0%,#047857 60%,#059669 100%);">
+    <div class="absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-white/5"></div>
+    <div class="max-w-6xl mx-auto px-6 py-20 sm:py-28 relative">
+      <span class="badge badge-green mb-5"><i class="fas fa-hospital"></i> Clinic Management Platform</span>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight max-w-3xl">
+        Reception and consultation, working from the same queue.
+      </h1>
+      <p class="mt-5 text-lg text-emerald-100/90 max-w-2xl leading-relaxed">
+        MultiRx gives the front desk and the doctor one shared patient record, one live serial
+        queue, and a call bell that connects the two — so nobody has to walk down the corridor
+        to ask who is next.
       </p>
-    </div>
-    
-    <div class="grid md:grid-cols-3 gap-8">
-      <!-- Feature 1 -->
-      <div class="feature-card p-8 rounded-2xl">
-        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 class="text-2xl font-semibold mb-4">Error-Free Prescriptions</h3>
-        <p class="text-gray-600 mb-6">
-          Reduce medication errors with our intelligent system that includes drug interaction checks and dosage validation.
-        </p>
-        <a href="{% url 'prescribe' %}" class="text-emerald-600 font-medium flex items-center">
-          Learn more
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-      
-      <!-- Feature 2 -->
-      <div class="feature-card p-8 rounded-2xl">
-        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-        </div>
-        <h3 class="text-2xl font-semibold mb-4">Patient Management</h3>
-        <p class="text-gray-600 mb-6">
-          Comprehensive patient records with medical history, allergies, and previous prescriptions all in one place.
-        </p>
-        <a href="{% url 'search' %}" class="text-emerald-600 font-medium flex items-center">
-          Learn more
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-      
-      <!-- Feature 3 -->
-      <div class="feature-card p-8 rounded-2xl">
-        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-        </div>
-        <h3 class="text-2xl font-semibold mb-4">Secure & Compliant</h3>
-        <p class="text-gray-600 mb-6">
-          HIPAA-compliant platform with end-to-end encryption to protect patient data and ensure privacy.
-        </p>
-        <a href="#" class="text-emerald-600 font-medium flex items-center">
-          Learn more
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="{% url 'login' %}" class="btn bg-white text-emerald-700 hover:bg-emerald-50 px-7 py-3.5">
+          Sign in to your console <i class="fas fa-arrow-right"></i>
         </a>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
+  <!-- Two consoles -->
+  <section class="max-w-6xl mx-auto px-6 py-16 w-full">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <h2 class="text-3xl font-bold text-slate-900">Two roles, one system</h2>
+      <p class="mt-3 text-slate-600">Your login ID decides which console opens.</p>
+    </div>
 
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="card card-pad">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+            <i class="fas fa-headset"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Reception Desk</h3>
+            <p class="text-xs text-slate-500 font-mono">RE + 4 digits</p>
+          </div>
+        </div>
+        <ul class="space-y-2.5 text-sm text-slate-600">
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Register new patients with the full Additional Patient Record</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Look up and update existing patients</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Run the serial queue and send patients in</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Hear the doctor's call bell from any reception page</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Review clinic-wide analysis</li>
+        </ul>
+      </div>
+
+      <div class="card card-pad">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            <i class="fas fa-user-doctor"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Doctor Console</h3>
+            <p class="text-xs text-slate-500 font-mono">HF + 4 digits</p>
+          </div>
+        </div>
+        <ul class="space-y-2.5 text-sm text-slate-600">
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> See who is in the room and who is waiting</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Open the full patient record before consulting</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Write problems, examinations, reports and medicines</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Generate, view, download and print the prescription</li>
+          <li class="flex gap-2.5"><i class="fas fa-check text-emerald-500 mt-1"></i> Call the next patient with one button</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Workflow -->
+  <section class="bg-white border-y border-slate-200">
+    <div class="max-w-6xl mx-auto px-6 py-16">
+      <h2 class="text-2xl font-bold text-slate-900 text-center mb-12">How a visit flows</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center mb-4">1</div>
+          <h3 class="font-semibold text-slate-900 mb-1.5">Patient arrives</h3>
+          <p class="text-sm text-slate-600">Reception records demographics and the full clinical record, or pulls up an existing patient.</p>
+        </div>
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center mb-4">2</div>
+          <h3 class="font-semibold text-slate-900 mb-1.5">Serial assigned</h3>
+          <p class="text-sm text-slate-600">The patient joins the doctor's queue as serial 1, 2, 3 … in arrival order.</p>
+        </div>
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center mb-4">3</div>
+          <h3 class="font-semibold text-slate-900 mb-1.5">Consultation</h3>
+          <p class="text-sm text-slate-600">The doctor opens the record, prescribes, and prints or downloads the PDF.</p>
+        </div>
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center mb-4">4</div>
+          <h3 class="font-semibold text-slate-900 mb-1.5">Next patient</h3>
+          <p class="text-sm text-slate-600">One button rings reception for 3 seconds; the desk sends the next serial in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-8 text-center text-xs text-slate-500">
+    <p>&copy; {% now "Y" %} MultiRx · Jamalpur Science &amp; Technology University</p>
+    <button type="button" onclick="openDevModal()" class="mt-2 font-semibold text-emerald-700 hover:text-emerald-800">
+      <i class="fas fa-user-circle mr-1"></i> Meet the Developers
+    </button>
+  </footer>
+</div>
 {% endblock %}
